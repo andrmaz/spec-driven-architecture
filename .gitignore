@@ -6,3 +6,6 @@
 # React Router
 /.react-router/
 /build/
+
+# IDE files
+.vscode/
