@@ -4,9 +4,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 
 import * as schema from "./schema";
 
-export const DatabaseContext = new AsyncLocalStorage<
-  PostgresJsDatabase<typeof schema>
->();
+export const DatabaseContext = new AsyncLocalStorage<PostgresJsDatabase<typeof schema>>();
 
 export function database() {
   const db = DatabaseContext.getStore();

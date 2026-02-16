@@ -45,9 +45,7 @@
         "guestBook_email_unique": {
           "name": "guestBook_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},

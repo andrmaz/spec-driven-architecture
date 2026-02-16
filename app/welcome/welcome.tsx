@@ -23,16 +23,8 @@ export function Welcome({
         <header className="flex flex-col items-center gap-9">
           <h1 className="sr-only">{message}</h1>
           <div className="w-[500px] max-w-[100vw] p-4">
-            <img
-              src={logoLight}
-              alt="React Router"
-              className="block w-full dark:hidden"
-            />
-            <img
-              src={logoDark}
-              alt="React Router"
-              className="hidden w-full dark:block"
-            />
+            <img src={logoLight} alt="React Router" className="block w-full dark:hidden" />
+            <img src={logoDark} alt="React Router" className="hidden w-full dark:block" />
           </div>
         </header>
         <div className="max-w-[300px] w-full space-y-6 px-4">
@@ -90,11 +82,7 @@ export function Welcome({
               >
                 Sign Guest Book
               </button>
-              {guestBookError && (
-                <p className="text-red-500 dark:text-red-400">
-                  {guestBookError}
-                </p>
-              )}
+              {guestBookError && <p className="text-red-500 dark:text-red-400">{guestBookError}</p>}
             </Form>
             <ul className="text-center">
               {<li className="p-3">{message}</li>}
