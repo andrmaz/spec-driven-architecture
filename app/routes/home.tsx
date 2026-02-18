@@ -1,61 +1,39 @@
-import { database } from "~/database/context";
-import * as schema from "~/database/schema";
-
+// import { database } from "~/database/context";
+// import * as schema from "~/database/schema";
+import { TamboProvider } from "@tambo-ai/react";
+import { components } from "../lib/tambo";
+import { MessageThreadPanel } from "@/components/tambo/message-thread-panel";
 import type { Route } from "./+types/home";
-import { Welcome } from "../welcome/welcome";
 
 export function meta() {
   return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
+    { title: "Spec-Driven Architecture" },
+    { name: "description", content: "Spec-Driven Architecture" },
   ];
 }
 
-export async function action({ request }: Route.ActionArgs) {
-  const formData = await request.formData();
-  let name = formData.get("name");
-  let email = formData.get("email");
-  if (typeof name !== "string" || typeof email !== "string") {
-    return { guestBookError: "Name and email are required" };
-  }
-
-  name = name.trim();
-  email = email.trim();
-  if (!name || !email) {
-    return { guestBookError: "Name and email are required" };
-  }
-
-  const db = database();
-  try {
-    await db.insert(schema.guestBook).values({ name, email });
-  } catch (error) {
-    console.error(error);
-    return { guestBookError: "Error adding to guest book" };
-  }
+/* export async function action(args: Route.ActionArgs) {
+  console.log(args);
 }
 
-export async function loader({ context }: Route.LoaderArgs) {
-  const db = database();
+export async function loader(args: Route.LoaderArgs) {
+  console.log(args);
+  return {};
+} */
 
-  const guestBook = await db.query.guestBook.findMany({
-    columns: {
-      id: true,
-      name: true,
-    },
-  });
-
-  return {
-    guestBook,
-    message: context.VALUE_FROM_EXPRESS,
-  };
-}
-
-export default function Home({ actionData, loaderData }: Route.ComponentProps) {
+export default function Home(props: Route.ComponentProps) {
+  console.log(props);
   return (
-    <Welcome
-      guestBook={loaderData.guestBook}
-      guestBookError={actionData?.guestBookError}
-      message={loaderData.message}
-    />
+    <div>
+      <TamboProvider
+        apiKey={import.meta.env.VITE_TAMBO_API_KEY}
+        userKey="user-1"
+        components={components}
+      >
+        {/* Tambo components */}
+        <MessageThreadPanel />
+        {/* other Tambo components */}
+      </TamboProvider>
+    </div>
   );
 }
