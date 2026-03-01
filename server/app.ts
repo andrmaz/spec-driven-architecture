@@ -89,149 +89,191 @@ app.delete("/api/projects/:id", async (req, res) => {
 // ── Architectural Characteristics ──────────────────────
 
 app.put("/api/projects/:id/characteristics", async (req, res) => {
-  const db = DatabaseContext.getStore()!;
-  const projectId = req.params.id;
-  const { characteristics } = req.body as {
-    characteristics: {
-      name: string;
-      rating: number;
-      description?: string;
-      isTopThree: boolean;
-    }[];
-  };
+  try {
+    const db = DatabaseContext.getStore()!;
+    const projectId = req.params.id;
+    const { characteristics } = req.body as {
+      characteristics: {
+        name: string;
+        rating: number;
+        description?: string;
+        isTopThree: boolean;
+      }[];
+    };
 
-  // Filter out entries with missing required fields
-  const valid = characteristics.filter((c) => c.name);
+    // Filter out entries with missing required fields
+    const valid = (characteristics ?? []).filter((c) => c.name);
 
-  // Delete existing then insert new
-  await db
-    .delete(schema.architecturalCharacteristics)
-    .where(eq(schema.architecturalCharacteristics.projectId, projectId));
+    await db.transaction(async (tx) => {
+      // Delete existing then insert new
+      await tx
+        .delete(schema.architecturalCharacteristics)
+        .where(eq(schema.architecturalCharacteristics.projectId, projectId));
 
-  if (valid.length > 0) {
-    await db
-      .insert(schema.architecturalCharacteristics)
-      .values(valid.map((c) => ({ ...c, projectId })));
+      if (valid.length > 0) {
+        await tx
+          .insert(schema.architecturalCharacteristics)
+          .values(valid.map((c) => ({ ...c, projectId })));
+      }
+    });
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Failed to save characteristics:", err);
+    res.status(500).json({ error: "Failed to save characteristics" });
   }
-
-  res.json({ ok: true });
 });
 
 // ── Logical Components ─────────────────────────────────
 
 app.put("/api/projects/:id/components", async (req, res) => {
-  const db = DatabaseContext.getStore()!;
-  const projectId = req.params.id;
-  const { components } = req.body as {
-    components: {
-      name: string;
-      responsibility?: string;
-      dependencies?: string[];
-      namespace?: string;
-    }[];
-  };
+  try {
+    const db = DatabaseContext.getStore()!;
+    const projectId = req.params.id;
+    const { components } = req.body as {
+      components: {
+        name: string;
+        responsibility?: string;
+        dependencies?: string[];
+        namespace?: string;
+      }[];
+    };
 
-  const valid = components.filter((c) => c.name);
+    const valid = (components ?? []).filter((c) => c.name);
 
-  await db
-    .delete(schema.logicalComponents)
-    .where(eq(schema.logicalComponents.projectId, projectId));
+    await db.transaction(async (tx) => {
+      await tx
+        .delete(schema.logicalComponents)
+        .where(eq(schema.logicalComponents.projectId, projectId));
 
-  if (valid.length > 0) {
-    await db.insert(schema.logicalComponents).values(valid.map((c) => ({ ...c, projectId })));
+      if (valid.length > 0) {
+        await tx.insert(schema.logicalComponents).values(valid.map((c) => ({ ...c, projectId })));
+      }
+    });
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Failed to save components:", err);
+    res.status(500).json({ error: "Failed to save components" });
   }
-
-  res.json({ ok: true });
 });
 
 // ── Architectural Styles ───────────────────────────────
 
 app.put("/api/projects/:id/styles", async (req, res) => {
-  const db = DatabaseContext.getStore()!;
-  const projectId = req.params.id;
-  const { styles } = req.body as {
-    styles: {
-      styleName: string;
-      rationale?: string;
-      starRatings?: Record<string, number>;
-      isSelected: boolean;
-    }[];
-  };
+  try {
+    const db = DatabaseContext.getStore()!;
+    const projectId = req.params.id;
+    const { styles } = req.body as {
+      styles: {
+        styleName: string;
+        rationale?: string;
+        starRatings?: Record<string, number>;
+        isSelected: boolean;
+      }[];
+    };
 
-  const valid = styles.filter((s) => s.styleName);
+    const valid = (styles ?? []).filter((s) => s.styleName);
 
-  await db
-    .delete(schema.architecturalStyles)
-    .where(eq(schema.architecturalStyles.projectId, projectId));
+    await db.transaction(async (tx) => {
+      await tx
+        .delete(schema.architecturalStyles)
+        .where(eq(schema.architecturalStyles.projectId, projectId));
 
-  if (valid.length > 0) {
-    await db.insert(schema.architecturalStyles).values(valid.map((s) => ({ ...s, projectId })));
+      if (valid.length > 0) {
+        await tx.insert(schema.architecturalStyles).values(valid.map((s) => ({ ...s, projectId })));
+      }
+    });
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Failed to save styles:", err);
+    res.status(500).json({ error: "Failed to save styles" });
   }
-
-  res.json({ ok: true });
 });
 
 // ── Architecture Decisions ─────────────────────────────
 
 app.post("/api/projects/:id/decisions", async (req, res) => {
-  const db = DatabaseContext.getStore()!;
-  const projectId = req.params.id;
-  const { title, status, context, decision, consequences } = req.body;
+  try {
+    const db = DatabaseContext.getStore()!;
+    const projectId = req.params.id;
+    const { title, status, context, decision, consequences } = req.body;
 
-  const [row] = await db
-    .insert(schema.architectureDecisions)
-    .values({ projectId, title, status, context, decision, consequences })
-    .returning();
+    const [row] = await db
+      .insert(schema.architectureDecisions)
+      .values({ projectId, title, status, context, decision, consequences })
+      .returning();
 
-  res.status(201).json(row);
+    res.status(201).json(row);
+  } catch (err) {
+    console.error("Failed to save decision:", err);
+    res.status(500).json({ error: "Failed to save decision" });
+  }
 });
 
 app.put("/api/projects/:id/decisions/:decisionId", async (req, res) => {
-  const db = DatabaseContext.getStore()!;
-  const { title, status, context, decision, consequences } = req.body;
-  const updates: Record<string, unknown> = {};
-  if (title !== undefined) updates.title = title;
-  if (status !== undefined) updates.status = status;
-  if (context !== undefined) updates.context = context;
-  if (decision !== undefined) updates.decision = decision;
-  if (consequences !== undefined) updates.consequences = consequences;
+  try {
+    const db = DatabaseContext.getStore()!;
+    const { title, status, context, decision, consequences } = req.body;
+    const updates: Record<string, unknown> = {};
+    if (title !== undefined) updates.title = title;
+    if (status !== undefined) updates.status = status;
+    if (context !== undefined) updates.context = context;
+    if (decision !== undefined) updates.decision = decision;
+    if (consequences !== undefined) updates.consequences = consequences;
 
-  const [row] = await db
-    .update(schema.architectureDecisions)
-    .set(updates)
-    .where(
-      and(
-        eq(schema.architectureDecisions.id, req.params.decisionId),
-        eq(schema.architectureDecisions.projectId, req.params.id)
+    const [row] = await db
+      .update(schema.architectureDecisions)
+      .set(updates)
+      .where(
+        and(
+          eq(schema.architectureDecisions.id, req.params.decisionId),
+          eq(schema.architectureDecisions.projectId, req.params.id)
+        )
       )
-    )
-    .returning();
-  if (!row) return res.status(404).json({ error: "Decision not found" });
-  res.json(row);
+      .returning();
+    if (!row) return res.status(404).json({ error: "Decision not found" });
+    res.json(row);
+  } catch (err) {
+    console.error("Failed to update decision:", err);
+    res.status(500).json({ error: "Failed to update decision" });
+  }
 });
 
 // ── Architecture Diagrams ──────────────────────────────
 
 app.put("/api/projects/:id/diagrams", async (req, res) => {
-  const db = DatabaseContext.getStore()!;
-  const projectId = req.params.id;
-  const { diagrams } = req.body as {
-    diagrams: {
-      title: string;
-      mermaidCode: string;
-      diagramType: "context" | "container" | "component" | "sequence" | "flowchart";
-    }[];
-  };
+  try {
+    const db = DatabaseContext.getStore()!;
+    const projectId = req.params.id;
+    const { diagrams } = req.body as {
+      diagrams: {
+        title: string;
+        mermaidCode: string;
+        diagramType: "context" | "container" | "component" | "sequence" | "flowchart";
+      }[];
+    };
 
-  await db
-    .delete(schema.architectureDiagrams)
-    .where(eq(schema.architectureDiagrams.projectId, projectId));
+    const valid = (diagrams ?? []).filter((d) => d.title && d.mermaidCode);
 
-  if (diagrams.length > 0) {
-    await db.insert(schema.architectureDiagrams).values(diagrams.map((d) => ({ ...d, projectId })));
+    await db.transaction(async (tx) => {
+      await tx
+        .delete(schema.architectureDiagrams)
+        .where(eq(schema.architectureDiagrams.projectId, projectId));
+
+      if (valid.length > 0) {
+        await tx
+          .insert(schema.architectureDiagrams)
+          .values(valid.map((d) => ({ ...d, projectId })));
+      }
+    });
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Failed to save diagrams:", err);
+    res.status(500).json({ error: "Failed to save diagrams" });
   }
-
-  res.json({ ok: true });
 });
 
 // ── Export (full project data) ─────────────────────────

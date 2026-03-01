@@ -92,13 +92,21 @@ function generateStyle(p: ProjectWithRelations): string {
     if (selected.rationale) md += `${selected.rationale}\n\n`;
   }
   md += `## Style Comparison\n\n`;
-  const allRatings = p.styles.flatMap((s) => Object.keys(s.starRatings ?? {}));
+  const allRatings = p.styles.flatMap((s) => {
+    const ratings = s.starRatings;
+    if (!ratings || typeof ratings !== "object") return [];
+    return Object.keys(ratings);
+  });
   const characteristics = [...new Set(allRatings)];
+  if (characteristics.length === 0) {
+    md += `No characteristic ratings recorded.\n`;
+    return md;
+  }
   md += `| Style | ${characteristics.join(" | ")} |\n`;
   md += `|---|${"---|".repeat(characteristics.length)}\n`;
   for (const s of p.styles) {
     const ratings = characteristics.map((c) => {
-      const r = s.starRatings?.[c] ?? 0;
+      const r = Math.min(5, Math.max(0, s.starRatings?.[c] ?? 0));
       return "★".repeat(r) + "☆".repeat(5 - r);
     });
     md += `| ${s.styleName}${s.isSelected ? " ✓" : ""} | ${ratings.join(" | ")} |\n`;

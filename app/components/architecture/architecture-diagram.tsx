@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { Code, Eye } from "lucide-react";
+import { AlertTriangle, Code, Eye } from "lucide-react";
 
 interface ArchitectureDiagramProps {
   title?: string;
@@ -16,15 +16,41 @@ const TYPE_LABELS: Record<string, string> = {
   flowchart: "Flowchart",
 };
 
+/**
+ * Sanitise AI-generated Mermaid code to fix common syntax issues
+ * that cause the parser to fail.
+ */
+function sanitizeMermaidCode(code: string): string {
+  let sanitized = code.trim();
+
+  // Replace deprecated "graph TD/TB/LR/RL" with "flowchart" equivalent
+  sanitized = sanitized.replace(/^graph\s+(TD|TB|LR|RL|BT)\b/m, (_, dir) => `flowchart ${dir}`);
+
+  // Remove semicolons at end of lines (valid in old syntax, can confuse new parser)
+  sanitized = sanitized.replace(/;\s*$/gm, "");
+
+  // Fix unquoted labels that contain parentheses — wrap in double quotes
+  // e.g. A(Some Label) → A["Some Label"]
+  sanitized = sanitized.replace(
+    /^(\s*\w+)\(([^)]*)\)\s*$/gm,
+    (_, id, label) => `${id}["${label}"]`
+  );
+
+  return sanitized;
+}
+
 export function ArchitectureDiagram({ title, mermaidCode, diagramType }: ArchitectureDiagramProps) {
   const [showCode, setShowCode] = useState(false);
   const [svg, setSvg] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!mermaidCode) return;
 
     let cancelled = false;
+    setSvg(null);
+    setError(null);
 
     async function renderDiagram() {
       try {
@@ -33,12 +59,23 @@ export function ArchitectureDiagram({ title, mermaidCode, diagramType }: Archite
           startOnLoad: false,
           theme: "neutral",
           securityLevel: "loose",
+          suppressErrorRendering: true,
         });
+        const sanitized = sanitizeMermaidCode(mermaidCode!);
         const id = `mermaid-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-        const { svg: renderedSvg } = await mermaid.default.render(id, mermaidCode!);
-        if (!cancelled) setSvg(renderedSvg);
-      } catch {
-        if (!cancelled) setSvg(null);
+        const { svg: renderedSvg } = await mermaid.default.render(id, sanitized);
+        if (!cancelled) {
+          setSvg(renderedSvg);
+          setError(null);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setSvg(null);
+          const message = err instanceof Error ? err.message : String(err);
+          setError(message);
+          // Auto-show code view so the user can see what went wrong
+          setShowCode(true);
+        }
       }
     }
 
@@ -92,7 +129,18 @@ export function ArchitectureDiagram({ title, mermaidCode, diagramType }: Archite
 
       {/* Content */}
       <div className="bg-white p-4 dark:bg-gray-900">
-        {showCode ? (
+        {error && (
+          <div className="mb-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs dark:border-amber-800 dark:bg-amber-950/30">
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+            <div>
+              <p className="font-medium text-amber-800 dark:text-amber-300">
+                Mermaid syntax error — showing source code below
+              </p>
+              <p className="mt-1 text-amber-700 dark:text-amber-400/80">{error}</p>
+            </div>
+          </div>
+        )}
+        {showCode || error ? (
           <pre className="overflow-x-auto rounded-lg bg-gray-50 p-4 text-xs dark:bg-gray-800">
             <code className="text-gray-800 dark:text-gray-200">{mermaidCode}</code>
           </pre>

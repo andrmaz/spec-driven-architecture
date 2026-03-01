@@ -301,7 +301,14 @@ const MessageSuggestionsList = React.forwardRef<HTMLDivElement, MessageSuggestio
                       isSelected: selectedSuggestionId === suggestion.id,
                     })
                   )}
-                  onClick={async () => !isGenerating && (await accept({ suggestion }))}
+                  onClick={async () => {
+                    if (isGenerating) return;
+                    try {
+                      await accept({ suggestion });
+                    } catch (err) {
+                      console.warn("Suggestion accept failed:", err);
+                    }
+                  }}
                   disabled={isGenerating}
                   data-suggestion-id={suggestion.id}
                   data-suggestion-index={index}
