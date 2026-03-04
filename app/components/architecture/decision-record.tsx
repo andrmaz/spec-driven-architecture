@@ -1,6 +1,8 @@
 import { cn } from "@/lib/utils";
 import { FileText } from "lucide-react";
 
+import { CardHeader } from "../ui/card-header";
+
 interface DecisionRecordProps {
   title?: string;
   status?: "proposed" | "accepted" | "deprecated" | "superseded";
@@ -26,7 +28,11 @@ export function DecisionRecord({
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
       {/* Header */}
-      <div className="flex items-center gap-3 bg-gradient-to-r from-orange-50 to-amber-50 px-5 py-3 dark:from-orange-950/30 dark:to-amber-950/30">
+      <CardHeader
+        gradient="orange-amber"
+        title={title ?? "Untitled Decision"}
+        className="flex items-center gap-3"
+      >
         <FileText className="h-4 w-4 text-orange-500" />
         <h3 className="flex-1 text-sm font-semibold text-gray-800 dark:text-gray-200">
           {title ?? "Untitled Decision"}
@@ -41,7 +47,7 @@ export function DecisionRecord({
             {status}
           </span>
         )}
-      </div>
+      </CardHeader>
 
       {/* Body */}
       <div className="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-900">

@@ -1,13 +1,6 @@
 import { cn } from "@/lib/utils";
-import { Target, Puzzle, Building2, FileText, Network, Check, Lock } from "lucide-react";
-
-const STEPS = [
-  { label: "Characteristics", icon: Target, description: "Identify driving quality attributes" },
-  { label: "Components", icon: Puzzle, description: "Map logical components" },
-  { label: "Architecture Style", icon: Building2, description: "Choose an architecture style" },
-  { label: "Decisions", icon: FileText, description: "Document architecture decisions" },
-  { label: "Diagrams", icon: Network, description: "Diagram your architecture" },
-];
+import { STEPS } from "@/lib/steps";
+import { Check, Lock } from "lucide-react";
 
 interface StepSidebarProps {
   currentStep: number;

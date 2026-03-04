@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, Code, Eye } from "lucide-react";
 
+import { CardHeader } from "../ui/card-header";
+import { EmptyCard } from "../ui/empty-card";
+
 interface ArchitectureDiagramProps {
   title?: string;
   mermaidCode?: string;
@@ -17,7 +20,7 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 /**
- * Sanitise AI-generated Mermaid code to fix common syntax issues
+ * Sanitize AI-generated Mermaid code to fix common syntax issues
  * that cause the parser to fail.
  */
 function sanitizeMermaidCode(code: string): string {
@@ -86,17 +89,17 @@ export function ArchitectureDiagram({ title, mermaidCode, diagramType }: Archite
   }, [mermaidCode]);
 
   if (!mermaidCode) {
-    return (
-      <div className="rounded-xl border border-gray-200 bg-gray-50 p-6 text-center text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-400">
-        No diagram code provided.
-      </div>
-    );
+    return <EmptyCard message="No diagram code provided." />;
   }
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
       {/* Header */}
-      <div className="flex items-center justify-between bg-gradient-to-r from-cyan-50 to-blue-50 px-5 py-3 dark:from-cyan-950/30 dark:to-blue-950/30">
+      <CardHeader
+        gradient="cyan-blue"
+        title={title ?? "Architecture Diagram"}
+        className="flex items-center justify-between"
+      >
         <div>
           <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
             {title ?? "Architecture Diagram"}
@@ -125,7 +128,7 @@ export function ArchitectureDiagram({ title, mermaidCode, diagramType }: Archite
             </>
           )}
         </button>
-      </div>
+      </CardHeader>
 
       {/* Content */}
       <div className="bg-white p-4 dark:bg-gray-900">

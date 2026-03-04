@@ -1,6 +1,9 @@
 import { cn } from "@/lib/utils";
 import { ArrowRight } from "lucide-react";
 
+import { CardHeader } from "../ui/card-header";
+import { EmptyCard } from "../ui/empty-card";
+
 export interface LogicalComponentItem {
   name?: string;
   responsibility?: string;
@@ -17,11 +20,7 @@ export function LogicalComponentsMap({ components, namespaces }: LogicalComponen
   const items = components ?? [];
 
   if (items.length === 0) {
-    return (
-      <div className="rounded-xl border border-gray-200 bg-gray-50 p-6 text-center text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-400">
-        No components identified yet.
-      </div>
-    );
+    return <EmptyCard message="No components identified yet." />;
   }
 
   // Group by namespace
@@ -36,14 +35,12 @@ export function LogicalComponentsMap({ components, namespaces }: LogicalComponen
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-gray-200 bg-gradient-to-r from-purple-50 to-indigo-50 px-5 py-3 dark:border-gray-700 dark:from-purple-950/30 dark:to-indigo-950/30">
-        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-          Logical Components Map
-        </h3>
-        <p className="text-xs text-gray-500 dark:text-gray-400">
-          {items.length} components across {groupNames.length} namespace(s)
-        </p>
-      </div>
+      <CardHeader
+        gradient="purple-indigo"
+        title="Logical Components Map"
+        subtitle={`${items.length} components across ${groupNames.length} namespace(s)`}
+        className="rounded-xl border border-gray-200 dark:border-gray-700"
+      />
 
       {groupNames.map((ns) => (
         <div key={ns}>

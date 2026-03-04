@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { TamboProvider } from "@tambo-ai/react";
 import { ArrowLeft, Download } from "lucide-react";
@@ -29,29 +29,19 @@ function ProjectWorkspaceInner({ project: initial }: { project: ProjectWithRelat
   // Get system prompt for current step
   const systemPrompt = useMemo(() => getSystemPrompt(project.currentStep), [project.currentStep]);
 
-  // Poll for step changes (when AI calls advanceStep)
+  // Listen for step changes via custom event (dispatched by api.updateProject)
   useEffect(() => {
-    const interval = setInterval(async () => {
-      try {
-        const fresh = await getProject(project.id);
-        if (fresh.currentStep !== project.currentStep) {
-          setProject(fresh);
-        }
-      } catch {
-        // ignore
+    function handleProjectUpdate(e: Event) {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.projectId === project.id && detail?.currentStep !== undefined) {
+        getProject(project.id)
+          .then(setProject)
+          .catch(() => {});
       }
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [project.id, project.currentStep]);
-
-  const handleStepClick = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    (_step: number) => {
-      // Only allow clicking completed steps (for review)
-      // Future: could scroll to or filter by that step's content
-    },
-    []
-  );
+    }
+    window.addEventListener("project-updated", handleProjectUpdate);
+    return () => window.removeEventListener("project-updated", handleProjectUpdate);
+  }, [project.id]);
 
   return (
     <div className="flex h-screen flex-col">
@@ -100,7 +90,7 @@ function ProjectWorkspaceInner({ project: initial }: { project: ProjectWithRelat
             "dark:border-gray-800 dark:bg-gray-900/50"
           )}
         >
-          <StepSidebar currentStep={project.currentStep} onStepClick={handleStepClick} />
+          <StepSidebar currentStep={project.currentStep} />
         </aside>
 
         {/* Chat workspace */}

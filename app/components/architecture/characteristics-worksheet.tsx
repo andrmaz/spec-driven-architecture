@@ -1,5 +1,8 @@
 import { cn } from "@/lib/utils";
-import { Star } from "lucide-react";
+
+import { CardHeader } from "../ui/card-header";
+import { EmptyCard } from "../ui/empty-card";
+import { StarRating } from "../ui/star-rating";
 
 export interface CharacteristicItem {
   name?: string;
@@ -16,23 +19,16 @@ export function CharacteristicsWorksheet({ characteristics }: CharacteristicsWor
   const items = characteristics ?? [];
 
   if (items.length === 0) {
-    return (
-      <div className="rounded-xl border border-gray-200 bg-gray-50 p-6 text-center text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-400">
-        No characteristics identified yet.
-      </div>
-    );
+    return <EmptyCard message="No characteristics identified yet." />;
   }
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-5 py-3 dark:from-blue-950/30 dark:to-indigo-950/30">
-        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-          Architecture Characteristics Worksheet
-        </h3>
-        <p className="text-xs text-gray-500 dark:text-gray-400">
-          Top 3 highlighted — the driving quality attributes for your system
-        </p>
-      </div>
+      <CardHeader
+        gradient="blue-indigo"
+        title="Architecture Characteristics Worksheet"
+        subtitle="Top 3 highlighted — the driving quality attributes for your system"
+      />
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
@@ -63,19 +59,7 @@ export function CharacteristicsWorksheet({ characteristics }: CharacteristicsWor
                 {item.name ?? "—"}
               </td>
               <td className="px-5 py-3">
-                <div className="flex gap-0.5">
-                  {Array.from({ length: 5 }).map((_, starIdx) => (
-                    <Star
-                      key={starIdx}
-                      className={cn(
-                        "h-4 w-4",
-                        starIdx < (item.rating ?? 0)
-                          ? "fill-amber-400 text-amber-400"
-                          : "text-gray-300 dark:text-gray-600"
-                      )}
-                    />
-                  ))}
-                </div>
+                <StarRating value={item.rating ?? 0} />
               </td>
               <td className="px-5 py-3 text-gray-600 dark:text-gray-400">
                 {item.description ?? "—"}

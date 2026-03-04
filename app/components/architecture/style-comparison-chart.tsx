@@ -1,5 +1,9 @@
 import { cn } from "@/lib/utils";
-import { Star, Check } from "lucide-react";
+import { Check } from "lucide-react";
+
+import { CardHeader } from "../ui/card-header";
+import { EmptyCard } from "../ui/empty-card";
+import { StarRating } from "../ui/star-rating";
 
 export interface StyleRating {
   characteristic?: string;
@@ -20,11 +24,7 @@ export function StyleComparisonChart({ styles, selectedStyle }: StyleComparisonC
   const items = styles ?? [];
 
   if (items.length === 0) {
-    return (
-      <div className="rounded-xl border border-gray-200 bg-gray-50 p-6 text-center text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-400">
-        No architecture styles to compare yet.
-      </div>
-    );
+    return <EmptyCard message="No architecture styles to compare yet." />;
   }
 
   // Collect all unique characteristic names from ratings
@@ -40,21 +40,22 @@ export function StyleComparisonChart({ styles, selectedStyle }: StyleComparisonC
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
-      <div className="bg-gradient-to-r from-emerald-50 to-teal-50 px-5 py-3 dark:from-emerald-950/30 dark:to-teal-950/30">
-        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-          Architecture Style Comparison
-        </h3>
-        <p className="text-xs text-gray-500 dark:text-gray-400">
-          Star ratings per characteristic —{" "}
-          {selectedStyle ? (
-            <span className="font-medium text-emerald-700 dark:text-emerald-400">
-              Selected: {selectedStyle}
-            </span>
-          ) : (
-            "no style selected yet"
-          )}
-        </p>
-      </div>
+      <CardHeader
+        gradient="emerald-teal"
+        title="Architecture Style Comparison"
+        subtitle={
+          <>
+            Star ratings per characteristic —{" "}
+            {selectedStyle ? (
+              <span className="font-medium text-emerald-700 dark:text-emerald-400">
+                Selected: {selectedStyle}
+              </span>
+            ) : (
+              "no style selected yet"
+            )}
+          </>
+        }
+      />
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -104,18 +105,8 @@ export function StyleComparisonChart({ styles, selectedStyle }: StyleComparisonC
                     const rating = item.ratings?.find((r) => r.characteristic === c)?.rating ?? 0;
                     return (
                       <td key={c} className="px-4 py-3">
-                        <div className="flex justify-center gap-0.5">
-                          {Array.from({ length: 5 }).map((_, starIdx) => (
-                            <Star
-                              key={starIdx}
-                              className={cn(
-                                "h-3.5 w-3.5",
-                                starIdx < rating
-                                  ? "fill-amber-400 text-amber-400"
-                                  : "text-gray-300 dark:text-gray-600"
-                              )}
-                            />
-                          ))}
+                        <div className="flex justify-center">
+                          <StarRating value={rating} size="sm" />
                         </div>
                       </td>
                     );

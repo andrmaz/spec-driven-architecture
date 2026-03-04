@@ -1,16 +1,9 @@
 import { cn } from "@/lib/utils";
+import { getStepLabel, TOTAL_STEPS } from "@/lib/steps";
 import type { Project } from "@/lib/api";
 import { Link } from "react-router";
 import { MoreHorizontal, Trash2, ArrowRight } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-
-const STEP_LABELS = [
-  "Characteristics",
-  "Components",
-  "Architecture Style",
-  "Decisions",
-  "Diagrams",
-];
 
 interface ProjectCardProps {
   project: Project;
@@ -18,8 +11,8 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ project, onDelete }: ProjectCardProps) {
-  const stepLabel = STEP_LABELS[project.currentStep - 1] ?? "Unknown";
-  const progress = (project.currentStep / 5) * 100;
+  const stepLabel = getStepLabel(project.currentStep);
+  const progress = (project.currentStep / TOTAL_STEPS) * 100;
 
   return (
     <div
@@ -81,7 +74,7 @@ export function ProjectCard({ project, onDelete }: ProjectCardProps) {
       <div className="mt-4">
         <div className="mb-1.5 flex items-center justify-between text-xs">
           <span className="font-medium text-gray-600 dark:text-gray-400">
-            Step {project.currentStep}/5
+            Step {project.currentStep}/{TOTAL_STEPS}
           </span>
           <span className="rounded-full bg-blue-100 px-2 py-0.5 font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
             {stepLabel}

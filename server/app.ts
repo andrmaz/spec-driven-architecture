@@ -1,8 +1,11 @@
 import { createRequestHandler } from "@react-router/express";
 import { and, eq } from "drizzle-orm";
+import type { PgTable, TableConfig } from "drizzle-orm/pg-core";
 import { drizzle } from "drizzle-orm/postgres-js";
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import express from "express";
 import postgres from "postgres";
+import { z } from "zod/v4";
 import "react-router";
 
 import { DatabaseContext } from "~/database/context";
@@ -20,10 +23,83 @@ if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required");
 
 const client = postgres(process.env.DATABASE_URL);
 const db = drizzle(client, { schema });
+Object.assign(db, { $client: client });
 app.use((_, __, next) => DatabaseContext.run(db, next));
 
 // ── JSON body parsing for API routes ───────────────────
 app.use("/api", express.json());
+
+// ── Helpers ────────────────────────────────────────────
+
+type DrizzleDb = PostgresJsDatabase<typeof schema>;
+
+/**
+ * Generic delete-all-then-insert transaction for child rows.
+ * Eliminates repeated transactional boilerplate across 4 endpoints.
+ */
+async function replaceChildRows<T extends PgTable<TableConfig>>(
+  db: DrizzleDb,
+  table: T,
+  projectIdColumn: Parameters<typeof eq>[0],
+  projectId: string,
+  rows: Record<string, unknown>[]
+) {
+  await db.transaction(async (tx) => {
+    await tx.delete(table).where(eq(projectIdColumn as never, projectId));
+    if (rows.length > 0) {
+      await tx.insert(table).values(rows.map((r) => ({ ...r, projectId })) as never);
+    }
+  });
+}
+
+// ── Validation Schemas ─────────────────────────────────
+
+const CreateProjectSchema = z.object({
+  name: z.string().min(1).max(255),
+  description: z.string().optional(),
+});
+
+const UpdateProjectSchema = z.object({
+  name: z.string().min(1).max(255).optional(),
+  description: z.string().optional(),
+  currentStep: z.number().int().min(1).max(5).optional(),
+  tamboThreadId: z.string().max(255).optional(),
+});
+
+const CharacteristicSchema = z.object({
+  name: z.string().min(1).max(255),
+  rating: z.number().int().min(0).max(5),
+  description: z.string().optional(),
+  isTopThree: z.boolean().default(false),
+});
+
+const ComponentSchema = z.object({
+  name: z.string().min(1).max(255),
+  responsibility: z.string().optional(),
+  dependencies: z.array(z.string()).optional(),
+  namespace: z.string().max(255).optional(),
+});
+
+const StyleSchema = z.object({
+  styleName: z.string().min(1).max(255),
+  rationale: z.string().optional(),
+  starRatings: z.record(z.string(), z.number()).optional(),
+  isSelected: z.boolean().default(false),
+});
+
+const DecisionSchema = z.object({
+  title: z.string().min(1).max(500),
+  status: z.enum(["proposed", "accepted", "deprecated", "superseded"]).optional(),
+  context: z.string().optional(),
+  decision: z.string().optional(),
+  consequences: z.string().optional(),
+});
+
+const DiagramSchema = z.object({
+  title: z.string().min(1).max(500),
+  mermaidCode: z.string().min(1),
+  diagramType: z.enum(["context", "container", "component", "sequence", "flowchart"]),
+});
 
 // ── Projects CRUD ──────────────────────────────────────
 
@@ -36,9 +112,11 @@ app.get("/api/projects", async (_req, res) => {
 });
 
 app.post("/api/projects", async (req, res) => {
+  const parsed = CreateProjectSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
+
   const db = DatabaseContext.getStore()!;
-  const { name, description } = req.body;
-  const [project] = await db.insert(schema.projects).values({ name, description }).returning();
+  const [project] = await db.insert(schema.projects).values(parsed.data).returning();
   res.status(201).json(project);
 });
 
@@ -59,13 +137,15 @@ app.get("/api/projects/:id", async (req, res) => {
 });
 
 app.put("/api/projects/:id", async (req, res) => {
+  const parsed = UpdateProjectSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
+
   const db = DatabaseContext.getStore()!;
-  const { name, description, currentStep, tamboThreadId } = req.body;
-  const updates: Record<string, unknown> = { updatedAt: new Date() };
-  if (name !== undefined) updates.name = name;
-  if (description !== undefined) updates.description = description;
-  if (currentStep !== undefined) updates.currentStep = currentStep;
-  if (tamboThreadId !== undefined) updates.tamboThreadId = tamboThreadId;
+  const updates: Partial<typeof schema.projects.$inferInsert> = { updatedAt: new Date() };
+  if (parsed.data.name !== undefined) updates.name = parsed.data.name;
+  if (parsed.data.description !== undefined) updates.description = parsed.data.description;
+  if (parsed.data.currentStep !== undefined) updates.currentStep = parsed.data.currentStep;
+  if (parsed.data.tamboThreadId !== undefined) updates.tamboThreadId = parsed.data.tamboThreadId;
 
   const [project] = await db
     .update(schema.projects)
@@ -90,32 +170,20 @@ app.delete("/api/projects/:id", async (req, res) => {
 
 app.put("/api/projects/:id/characteristics", async (req, res) => {
   try {
+    const parsed = z.object({ characteristics: z.array(CharacteristicSchema) }).safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
+
     const db = DatabaseContext.getStore()!;
     const projectId = req.params.id;
-    const { characteristics } = req.body as {
-      characteristics: {
-        name: string;
-        rating: number;
-        description?: string;
-        isTopThree: boolean;
-      }[];
-    };
+    const valid = parsed.data.characteristics.filter((c) => c.name);
 
-    // Filter out entries with missing required fields
-    const valid = (characteristics ?? []).filter((c) => c.name);
-
-    await db.transaction(async (tx) => {
-      // Delete existing then insert new
-      await tx
-        .delete(schema.architecturalCharacteristics)
-        .where(eq(schema.architecturalCharacteristics.projectId, projectId));
-
-      if (valid.length > 0) {
-        await tx
-          .insert(schema.architecturalCharacteristics)
-          .values(valid.map((c) => ({ ...c, projectId })));
-      }
-    });
+    await replaceChildRows(
+      db,
+      schema.architecturalCharacteristics,
+      schema.architecturalCharacteristics.projectId,
+      projectId,
+      valid
+    );
 
     res.json({ ok: true });
   } catch (err) {
@@ -128,28 +196,20 @@ app.put("/api/projects/:id/characteristics", async (req, res) => {
 
 app.put("/api/projects/:id/components", async (req, res) => {
   try {
+    const parsed = z.object({ components: z.array(ComponentSchema) }).safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
+
     const db = DatabaseContext.getStore()!;
     const projectId = req.params.id;
-    const { components } = req.body as {
-      components: {
-        name: string;
-        responsibility?: string;
-        dependencies?: string[];
-        namespace?: string;
-      }[];
-    };
+    const valid = parsed.data.components.filter((c) => c.name);
 
-    const valid = (components ?? []).filter((c) => c.name);
-
-    await db.transaction(async (tx) => {
-      await tx
-        .delete(schema.logicalComponents)
-        .where(eq(schema.logicalComponents.projectId, projectId));
-
-      if (valid.length > 0) {
-        await tx.insert(schema.logicalComponents).values(valid.map((c) => ({ ...c, projectId })));
-      }
-    });
+    await replaceChildRows(
+      db,
+      schema.logicalComponents,
+      schema.logicalComponents.projectId,
+      projectId,
+      valid
+    );
 
     res.json({ ok: true });
   } catch (err) {
@@ -162,28 +222,20 @@ app.put("/api/projects/:id/components", async (req, res) => {
 
 app.put("/api/projects/:id/styles", async (req, res) => {
   try {
+    const parsed = z.object({ styles: z.array(StyleSchema) }).safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
+
     const db = DatabaseContext.getStore()!;
     const projectId = req.params.id;
-    const { styles } = req.body as {
-      styles: {
-        styleName: string;
-        rationale?: string;
-        starRatings?: Record<string, number>;
-        isSelected: boolean;
-      }[];
-    };
+    const valid = parsed.data.styles.filter((s) => s.styleName);
 
-    const valid = (styles ?? []).filter((s) => s.styleName);
-
-    await db.transaction(async (tx) => {
-      await tx
-        .delete(schema.architecturalStyles)
-        .where(eq(schema.architecturalStyles.projectId, projectId));
-
-      if (valid.length > 0) {
-        await tx.insert(schema.architecturalStyles).values(valid.map((s) => ({ ...s, projectId })));
-      }
-    });
+    await replaceChildRows(
+      db,
+      schema.architecturalStyles,
+      schema.architecturalStyles.projectId,
+      projectId,
+      valid
+    );
 
     res.json({ ok: true });
   } catch (err) {
@@ -196,13 +248,15 @@ app.put("/api/projects/:id/styles", async (req, res) => {
 
 app.post("/api/projects/:id/decisions", async (req, res) => {
   try {
+    const parsed = DecisionSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
+
     const db = DatabaseContext.getStore()!;
     const projectId = req.params.id;
-    const { title, status, context, decision, consequences } = req.body;
 
     const [row] = await db
       .insert(schema.architectureDecisions)
-      .values({ projectId, title, status, context, decision, consequences })
+      .values({ projectId, ...parsed.data })
       .returning();
 
     res.status(201).json(row);
@@ -214,14 +268,16 @@ app.post("/api/projects/:id/decisions", async (req, res) => {
 
 app.put("/api/projects/:id/decisions/:decisionId", async (req, res) => {
   try {
+    const parsed = DecisionSchema.partial().safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
+
     const db = DatabaseContext.getStore()!;
-    const { title, status, context, decision, consequences } = req.body;
-    const updates: Record<string, unknown> = {};
-    if (title !== undefined) updates.title = title;
-    if (status !== undefined) updates.status = status;
-    if (context !== undefined) updates.context = context;
-    if (decision !== undefined) updates.decision = decision;
-    if (consequences !== undefined) updates.consequences = consequences;
+    const updates: Partial<typeof schema.architectureDecisions.$inferInsert> = {};
+    if (parsed.data.title !== undefined) updates.title = parsed.data.title;
+    if (parsed.data.status !== undefined) updates.status = parsed.data.status;
+    if (parsed.data.context !== undefined) updates.context = parsed.data.context;
+    if (parsed.data.decision !== undefined) updates.decision = parsed.data.decision;
+    if (parsed.data.consequences !== undefined) updates.consequences = parsed.data.consequences;
 
     const [row] = await db
       .update(schema.architectureDecisions)
@@ -245,29 +301,20 @@ app.put("/api/projects/:id/decisions/:decisionId", async (req, res) => {
 
 app.put("/api/projects/:id/diagrams", async (req, res) => {
   try {
+    const parsed = z.object({ diagrams: z.array(DiagramSchema) }).safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
+
     const db = DatabaseContext.getStore()!;
     const projectId = req.params.id;
-    const { diagrams } = req.body as {
-      diagrams: {
-        title: string;
-        mermaidCode: string;
-        diagramType: "context" | "container" | "component" | "sequence" | "flowchart";
-      }[];
-    };
+    const valid = parsed.data.diagrams.filter((d) => d.title && d.mermaidCode);
 
-    const valid = (diagrams ?? []).filter((d) => d.title && d.mermaidCode);
-
-    await db.transaction(async (tx) => {
-      await tx
-        .delete(schema.architectureDiagrams)
-        .where(eq(schema.architectureDiagrams.projectId, projectId));
-
-      if (valid.length > 0) {
-        await tx
-          .insert(schema.architectureDiagrams)
-          .values(valid.map((d) => ({ ...d, projectId })));
-      }
-    });
+    await replaceChildRows(
+      db,
+      schema.architectureDiagrams,
+      schema.architectureDiagrams.projectId,
+      projectId,
+      valid
+    );
 
     res.json({ ok: true });
   } catch (err) {
