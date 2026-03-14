@@ -33,19 +33,8 @@ const LazyDictationButton = React.lazy(() => import("./dictation-button"));
 /**
  * Wrapper component that includes Suspense boundary for the lazy-loaded DictationButton.
  * This ensures the component can be safely used without requiring consumers to add their own Suspense.
- * Also handles SSR by only rendering on the client (DictationButton uses Web Audio APIs).
  */
 const DictationButton = () => {
-  const [isMounted, setIsMounted] = React.useState(false);
-
-  React.useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (!isMounted) {
-    return null;
-  }
-
   return (
     <React.Suspense fallback={null}>
       <LazyDictationButton />

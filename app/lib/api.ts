@@ -80,7 +80,7 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
     const error = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(error.error || `Request failed: ${res.status}`);
   }
-  return res.json() as Promise<T>;
+  return res.json();
 }
 
 // ── Projects ───────────────────────────────────────────

@@ -31,8 +31,6 @@ const BooleanField: React.FC<FieldProps> = ({
   required,
   autoFocus,
 }) => {
-  const boolValue = value as boolean | undefined;
-
   return (
     <div className="space-y-2">
       <label className="text-sm font-medium text-foreground">
@@ -46,7 +44,7 @@ const BooleanField: React.FC<FieldProps> = ({
           onClick={() => onChange(true)}
           className={cn(
             "flex-1 px-4 py-2 rounded-lg border transition-colors",
-            boolValue === true
+            value === true
               ? "bg-accent text-accent-foreground border-accent"
               : "bg-background border-border hover:bg-muted"
           )}
@@ -58,7 +56,7 @@ const BooleanField: React.FC<FieldProps> = ({
           onClick={() => onChange(false)}
           className={cn(
             "flex-1 px-4 py-2 rounded-lg border transition-colors",
-            boolValue === false
+            value === false
               ? "bg-accent text-accent-foreground border-accent"
               : "bg-background border-border hover:bg-muted"
           )}
@@ -86,7 +84,6 @@ const EnumField: React.FC<FieldProps> = ({
   }
   const options = schema.enum ?? [];
   const optionNames = "enumNames" in schema ? (schema.enumNames ?? []) : options;
-  const stringValue = value as string | undefined;
 
   return (
     <div className="space-y-2">
@@ -103,7 +100,7 @@ const EnumField: React.FC<FieldProps> = ({
             onClick={() => onChange(option)}
             className={cn(
               "px-4 py-2 rounded-lg border transition-colors",
-              stringValue === option
+              value === option
                 ? "bg-accent text-accent-foreground border-accent"
                 : "bg-background border-border hover:bg-muted"
             )}
@@ -133,7 +130,7 @@ const StringField: React.FC<FieldProps> = ({
   if (schema.type !== "string") {
     return null;
   }
-  const stringValue = (value as string | undefined) ?? "";
+  const stringValue = typeof value === "string" ? value : "";
 
   // Map JSON Schema format to HTML5 input type
   const getInputType = (): string => {
@@ -206,7 +203,7 @@ const NumberField: React.FC<FieldProps> = ({
     return null;
   }
   const numberSchema = schema;
-  const numberValue = value as number | undefined;
+  const numberValue = typeof value === "number" ? value : undefined;
   const hasError = !!validationError;
   const errorId = `${inputId}-error`;
 
@@ -333,9 +330,9 @@ function validateField(
       };
     }
 
-    if ("pattern" in stringSchema && stringSchema.pattern) {
+    if ("pattern" in stringSchema && typeof stringSchema.pattern === "string") {
       try {
-        const regex = new RegExp(stringSchema.pattern as string);
+        const regex = new RegExp(stringSchema.pattern);
         if (!regex.test(stringValue)) {
           return {
             valid: false,

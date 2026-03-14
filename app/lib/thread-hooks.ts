@@ -72,9 +72,9 @@ export function useMergeRefs<Instance>(
             };
       }
 
-      (ref as React.MutableRefObject<Instance | null>).current = instance;
+      ref.current = instance;
       return () => {
-        (ref as React.MutableRefObject<Instance | null>).current = null;
+        ref.current = null;
       };
     });
 
@@ -124,16 +124,24 @@ export function useCanvasDetection(elementRef: React.RefObject<HTMLElement | nul
       }
     };
 
-    // Check on mount and after a short delay to ensure DOM is fully rendered
+    // Check on mount
     checkCanvas();
-    const timeoutId = setTimeout(checkCanvas, 100);
 
     // Re-check on window resize
     window.addEventListener("resize", checkCanvas);
 
+    // Observe DOM changes to detect canvas appearing/disappearing
+    const observer = new MutationObserver(checkCanvas);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["data-canvas-space"],
+    });
+
     return () => {
-      clearTimeout(timeoutId);
       window.removeEventListener("resize", checkCanvas);
+      observer.disconnect();
     };
   }, [elementRef]);
 

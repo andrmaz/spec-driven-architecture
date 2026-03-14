@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo, useRef } from "react";
-import { useNavigate } from "react-router";
+import { useEffect, useMemo, useRef } from "react";
+import { useNavigate, useRevalidator } from "react-router";
 import { TamboProvider, useTambo, useTamboThreadInput } from "@tambo-ai/react";
 import { ArrowLeft, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -31,15 +31,14 @@ function AutoWelcome() {
     // Defer submit to next tick so the value is committed
     const id = setTimeout(() => void submit(), 0);
     return () => clearTimeout(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isIdle, messages.length]);
+  }, [isIdle, messages.length, setValue, submit]);
 
   return null;
 }
 
-function ProjectWorkspaceInner({ project: initial }: { project: ProjectWithRelations }) {
-  const [project, setProject] = useState(initial);
+function ProjectWorkspaceInner({ project }: { project: ProjectWithRelations }) {
   const navigate = useNavigate();
+  const revalidator = useRevalidator();
 
   // Create project-scoped tools
   const tools = useMemo(() => createTools(project.id), [project.id]);
@@ -50,16 +49,14 @@ function ProjectWorkspaceInner({ project: initial }: { project: ProjectWithRelat
   // Listen for step changes via custom event (dispatched by api.updateProject)
   useEffect(() => {
     function handleProjectUpdate(e: Event) {
-      const detail = (e as CustomEvent).detail;
-      if (detail?.projectId === project.id && detail?.currentStep !== undefined) {
-        getProject(project.id)
-          .then(setProject)
-          .catch(() => {});
+      if (!(e instanceof CustomEvent)) return;
+      if (e.detail?.projectId === project.id) {
+        revalidator.revalidate();
       }
     }
     window.addEventListener("project-updated", handleProjectUpdate);
     return () => window.removeEventListener("project-updated", handleProjectUpdate);
-  }, [project.id]);
+  }, [project.id, revalidator]);
 
   return (
     <div className="flex h-screen flex-col">

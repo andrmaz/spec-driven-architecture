@@ -1,8 +1,6 @@
 import { createRequestHandler } from "@react-router/express";
 import { and, eq } from "drizzle-orm";
-import type { PgTable, TableConfig } from "drizzle-orm/pg-core";
 import { drizzle } from "drizzle-orm/postgres-js";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import express from "express";
 import postgres from "postgres";
 import { z } from "zod/v4";
@@ -28,29 +26,6 @@ app.use((_, __, next) => DatabaseContext.run(db, next));
 
 // ── JSON body parsing for API routes ───────────────────
 app.use("/api", express.json());
-
-// ── Helpers ────────────────────────────────────────────
-
-type DrizzleDb = PostgresJsDatabase<typeof schema>;
-
-/**
- * Generic delete-all-then-insert transaction for child rows.
- * Eliminates repeated transactional boilerplate across 4 endpoints.
- */
-async function replaceChildRows<T extends PgTable<TableConfig>>(
-  db: DrizzleDb,
-  table: T,
-  projectIdColumn: Parameters<typeof eq>[0],
-  projectId: string,
-  rows: Record<string, unknown>[]
-) {
-  await db.transaction(async (tx) => {
-    await tx.delete(table).where(eq(projectIdColumn as never, projectId));
-    if (rows.length > 0) {
-      await tx.insert(table).values(rows.map((r) => ({ ...r, projectId })) as never);
-    }
-  });
-}
 
 // ── Validation Schemas ─────────────────────────────────
 
@@ -177,13 +152,16 @@ app.put("/api/projects/:id/characteristics", async (req, res) => {
     const projectId = req.params.id;
     const valid = parsed.data.characteristics.filter((c) => c.name);
 
-    await replaceChildRows(
-      db,
-      schema.architecturalCharacteristics,
-      schema.architecturalCharacteristics.projectId,
-      projectId,
-      valid
-    );
+    await db.transaction(async (tx) => {
+      await tx
+        .delete(schema.architecturalCharacteristics)
+        .where(eq(schema.architecturalCharacteristics.projectId, projectId));
+      if (valid.length > 0) {
+        await tx
+          .insert(schema.architecturalCharacteristics)
+          .values(valid.map((r) => ({ ...r, projectId })));
+      }
+    });
 
     res.json({ ok: true });
   } catch (err) {
@@ -203,13 +181,14 @@ app.put("/api/projects/:id/components", async (req, res) => {
     const projectId = req.params.id;
     const valid = parsed.data.components.filter((c) => c.name);
 
-    await replaceChildRows(
-      db,
-      schema.logicalComponents,
-      schema.logicalComponents.projectId,
-      projectId,
-      valid
-    );
+    await db.transaction(async (tx) => {
+      await tx
+        .delete(schema.logicalComponents)
+        .where(eq(schema.logicalComponents.projectId, projectId));
+      if (valid.length > 0) {
+        await tx.insert(schema.logicalComponents).values(valid.map((r) => ({ ...r, projectId })));
+      }
+    });
 
     res.json({ ok: true });
   } catch (err) {
@@ -229,13 +208,14 @@ app.put("/api/projects/:id/styles", async (req, res) => {
     const projectId = req.params.id;
     const valid = parsed.data.styles.filter((s) => s.styleName);
 
-    await replaceChildRows(
-      db,
-      schema.architecturalStyles,
-      schema.architecturalStyles.projectId,
-      projectId,
-      valid
-    );
+    await db.transaction(async (tx) => {
+      await tx
+        .delete(schema.architecturalStyles)
+        .where(eq(schema.architecturalStyles.projectId, projectId));
+      if (valid.length > 0) {
+        await tx.insert(schema.architecturalStyles).values(valid.map((r) => ({ ...r, projectId })));
+      }
+    });
 
     res.json({ ok: true });
   } catch (err) {
@@ -308,13 +288,16 @@ app.put("/api/projects/:id/diagrams", async (req, res) => {
     const projectId = req.params.id;
     const valid = parsed.data.diagrams.filter((d) => d.title && d.mermaidCode);
 
-    await replaceChildRows(
-      db,
-      schema.architectureDiagrams,
-      schema.architectureDiagrams.projectId,
-      projectId,
-      valid
-    );
+    await db.transaction(async (tx) => {
+      await tx
+        .delete(schema.architectureDiagrams)
+        .where(eq(schema.architectureDiagrams.projectId, projectId));
+      if (valid.length > 0) {
+        await tx
+          .insert(schema.architectureDiagrams)
+          .values(valid.map((r) => ({ ...r, projectId })));
+      }
+    });
 
     res.json({ ok: true });
   } catch (err) {

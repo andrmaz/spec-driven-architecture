@@ -19,7 +19,7 @@ export function CreateProjectDialog({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
 
-  function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault();
     if (!name.trim()) return;
     onSubmit({ name: name.trim(), description: description.trim() || undefined });

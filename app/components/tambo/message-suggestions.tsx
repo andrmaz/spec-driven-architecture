@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import type { Suggestion, TamboThreadMessage } from "@tambo-ai/react";
 import { useTambo, useTamboSuggestions } from "@tambo-ai/react";
 import * as React from "react";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
 /**
  * @typedef MessageSuggestionsContextValue
@@ -96,10 +96,6 @@ const MessageSuggestions = React.forwardRef<HTMLDivElement, MessageSuggestionsPr
 
     const isMac = typeof navigator !== "undefined" && navigator.platform.startsWith("Mac");
 
-    // Track the last AI message ID to detect new messages
-    const lastAiMessageIdRef = useRef<string | null>(null);
-    const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
     const contextValue = React.useMemo(
       () => ({
         suggestions,
@@ -113,34 +109,6 @@ const MessageSuggestions = React.forwardRef<HTMLDivElement, MessageSuggestionsPr
       }),
       [suggestions, selectedSuggestionId, accept, isGenerating, error, messages, isStreaming, isMac]
     );
-
-    // Find the last AI message
-    const lastAiMessage =
-      messages.length > 0
-        ? (messages
-            .slice()
-            .reverse()
-            .find((msg) => msg.role === "assistant") ?? null)
-        : null;
-
-    // When a new AI message appears, update the reference
-    useEffect(() => {
-      if (lastAiMessage && lastAiMessage.id !== lastAiMessageIdRef.current) {
-        lastAiMessageIdRef.current = lastAiMessage.id;
-
-        if (loadingTimeoutRef.current) {
-          clearTimeout(loadingTimeoutRef.current);
-        }
-
-        loadingTimeoutRef.current = setTimeout(() => {}, 5000);
-      }
-
-      return () => {
-        if (loadingTimeoutRef.current) {
-          clearTimeout(loadingTimeoutRef.current);
-        }
-      };
-    }, [lastAiMessage, suggestions.length]);
 
     // Handle keyboard shortcuts for selecting suggestions
     useEffect(() => {

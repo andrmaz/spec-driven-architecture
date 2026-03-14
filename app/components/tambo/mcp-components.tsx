@@ -93,9 +93,17 @@ export const McpPromptButton = React.forwardRef<HTMLButtonElement, McpPromptButt
     const [promptError, setPromptError] = React.useState<string | null>(null);
     const { data: promptData, error: fetchError } = useTamboMcpPrompt(selectedPromptName ?? "");
 
-    // When prompt data is fetched, validate and insert it into the input
+    // When prompt data or fetch error arrives, process and insert/handle
     React.useEffect(() => {
-      if (selectedPromptName && promptData) {
+      if (!selectedPromptName) return;
+
+      if (fetchError) {
+        setPromptError("Failed to load prompt");
+        setSelectedPromptName(null);
+        return;
+      }
+
+      if (promptData) {
         // Validate prompt data structure
         if (!isValidPromptData(promptData)) {
           setPromptError("Invalid prompt format received");
@@ -122,15 +130,7 @@ export const McpPromptButton = React.forwardRef<HTMLButtonElement, McpPromptButt
         // Reset the selected prompt
         setSelectedPromptName(null);
       }
-    }, [promptData, selectedPromptName, onInsertText, value]);
-
-    // Handle fetch errors
-    React.useEffect(() => {
-      if (fetchError) {
-        setPromptError("Failed to load prompt");
-        setSelectedPromptName(null);
-      }
-    }, [fetchError]);
+    }, [promptData, fetchError, selectedPromptName, onInsertText, value]);
 
     // Clear error after a delay
     React.useEffect(() => {

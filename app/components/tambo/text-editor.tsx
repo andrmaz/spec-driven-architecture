@@ -260,7 +260,7 @@ function checkMentionExists(editor: Editor, label: string): boolean {
   let exists = false;
   editor.state.doc.descendants((node) => {
     if (node.type.name === "mention") {
-      const mentionLabel = node.attrs.label as string;
+      const mentionLabel: string = node.attrs.label;
       if (mentionLabel === label) {
         exists = true;
         return false;
@@ -658,7 +658,7 @@ export const TextEditor = React.forwardRef<TamboEditor, TextEditorProps>(
             handleResourceSelect,
             resourceRef
           ),
-          renderLabel: ({ node }) => `@${(node.attrs.label as string) ?? ""}`,
+          renderLabel: ({ node }) => `@${node.attrs.label ?? ""}`,
         }),
         createPromptCommandExtension(stableSearchPrompts, handlePromptSelect, promptRef),
       ],
@@ -754,7 +754,7 @@ export const TextEditor = React.forwardRef<TamboEditor, TextEditorProps>(
           let exists = false;
           editor.state.doc.descendants((node) => {
             if (node.type.name === "mention") {
-              const mentionId = node.attrs.id as string;
+              const mentionId: string = node.attrs.id;
               if (mentionId === id) {
                 exists = true;
                 return false;

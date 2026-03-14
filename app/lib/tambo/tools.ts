@@ -31,11 +31,15 @@ function createJsonArrayTool(projectId: string, config: JsonArrayToolConfig) {
     }),
     tool: async ({ data }) => {
       try {
-        const parsed = JSON.parse(data) as Array<Record<string, unknown>>;
+        const parsed: unknown = JSON.parse(data);
         if (!Array.isArray(parsed)) {
           return { success: false, message: "ERROR: data must be a JSON array string." };
         }
-        const valid = parsed.filter(config.filter);
+        const records = parsed.filter(
+          (item): item is Record<string, unknown> =>
+            item !== null && typeof item === "object" && !Array.isArray(item)
+        );
+        const valid = records.filter(config.filter);
         if (valid.length === 0) {
           return {
             success: false,
@@ -70,7 +74,7 @@ export function createTools(projectId: string): TamboTool[] {
       'JSON string of an array of characteristic objects. Each object must have: "name" (string), "rating" (number 1-5). Optional: "description" (string), "isTopThree" (boolean).',
     requiredFieldLabel: "name",
     entityLabel: "characteristics",
-    filter: (c) => typeof c.name === "string" && (c.name as string).length > 0,
+    filter: (c) => typeof c.name === "string" && c.name.length > 0,
     mapItem: (c) => ({
       name: c.name,
       rating: typeof c.rating === "number" ? c.rating : 3,
@@ -90,7 +94,7 @@ export function createTools(projectId: string): TamboTool[] {
       'JSON string of an array of component objects. Each object must have: "name" (string). Optional: "responsibility" (string), "namespace" (string), "dependencies" (string array).',
     requiredFieldLabel: "name",
     entityLabel: "components",
-    filter: (c) => typeof c.name === "string" && (c.name as string).length > 0,
+    filter: (c) => typeof c.name === "string" && c.name.length > 0,
     mapItem: (c) => ({
       name: c.name,
       responsibility: typeof c.responsibility === "string" ? c.responsibility : undefined,
@@ -110,12 +114,12 @@ export function createTools(projectId: string): TamboTool[] {
       'JSON string of an array of style objects. Each object must have: "styleName" (string). Optional: "rationale" (string), "starRatings" (object), "isSelected" (boolean).',
     requiredFieldLabel: "styleName",
     entityLabel: "styles",
-    filter: (s) => typeof s.styleName === "string" && (s.styleName as string).length > 0,
+    filter: (s) => typeof s.styleName === "string" && s.styleName.length > 0,
     mapItem: (s) => ({
       styleName: s.styleName,
       rationale: typeof s.rationale === "string" ? s.rationale : undefined,
       starRatings:
-        s.starRatings && typeof s.starRatings === "object"
+        s.starRatings && typeof s.starRatings === "object" && !Array.isArray(s.starRatings)
           ? (s.starRatings as Record<string, number>)
           : {},
       isSelected: typeof s.isSelected === "boolean" ? s.isSelected : false,
@@ -164,9 +168,9 @@ export function createTools(projectId: string): TamboTool[] {
         typeof d.title === "string" &&
         d.title.length > 0 &&
         typeof d.mermaidCode === "string" &&
-        (d.mermaidCode as string).length > 0 &&
+        d.mermaidCode.length > 0 &&
         typeof d.diagramType === "string" &&
-        validTypes.has(d.diagramType as string)
+        validTypes.has(d.diagramType)
       );
     },
     mapItem: (d) => d,

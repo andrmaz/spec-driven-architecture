@@ -3,7 +3,7 @@
 import { useTambo } from "@tambo-ai/react";
 import { cn } from "@/lib/utils";
 import * as React from "react";
-import { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * Props for the ScrollableMessageContainer component
@@ -35,17 +35,6 @@ export const ScrollableMessageContainer = React.forwardRef<
   // Handle forwarded ref
   React.useImperativeHandle(ref, () => scrollContainerRef.current!, []);
 
-  // Create a dependency that represents all content that should trigger autoscroll
-  const messagesContent = useMemo(() => {
-    if (!messages.length) return null;
-
-    return messages.map((message) => ({
-      id: message.id,
-      content: message.content,
-      reasoning: message.reasoning,
-    }));
-  }, [messages]);
-
   // Handle scroll events to detect user scrolling
   const handleScroll = useCallback(() => {
     if (!scrollContainerRef.current) return;
@@ -65,9 +54,9 @@ export const ScrollableMessageContainer = React.forwardRef<
     lastScrollTopRef.current = scrollTop;
   }, []);
 
-  // Auto-scroll to bottom when message content changes
+  // Auto-scroll to bottom when messages change
   useEffect(() => {
-    if (scrollContainerRef.current && messagesContent && shouldAutoscroll) {
+    if (scrollContainerRef.current && messages.length > 0 && shouldAutoscroll) {
       const scroll = () => {
         if (scrollContainerRef.current) {
           scrollContainerRef.current.scrollTo({
@@ -86,7 +75,7 @@ export const ScrollableMessageContainer = React.forwardRef<
         return () => clearTimeout(timeoutId);
       }
     }
-  }, [messagesContent, isStreaming, shouldAutoscroll]);
+  }, [messages, isStreaming, shouldAutoscroll]);
 
   return (
     <div

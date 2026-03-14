@@ -1,9 +1,8 @@
 import { useState, useCallback } from "react";
-import { useNavigate, useNavigation } from "react-router";
+import { useNavigate, useNavigation, useRevalidator } from "react-router";
 import { Loader2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { listProjects, createProject, deleteProject } from "@/lib/api";
-import type { Project } from "@/lib/api";
 import { ProjectCard } from "@/components/dashboard/project-card";
 import { CreateProjectDialog } from "@/components/dashboard/create-project-dialog";
 import { EmptyState } from "@/components/dashboard/empty-state";
@@ -22,12 +21,12 @@ export async function clientLoader() {
 }
 
 export default function Dashboard({ loaderData }: Route.ComponentProps) {
-  const { projects: initialProjects } = loaderData;
-  const [projects, setProjects] = useState<Project[]>(initialProjects);
+  const { projects } = loaderData;
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const navigation = useNavigation();
+  const revalidator = useRevalidator();
   const isNavigating = navigation.state === "loading";
 
   const handleCreate = useCallback(
@@ -44,10 +43,13 @@ export default function Dashboard({ loaderData }: Route.ComponentProps) {
     [navigate]
   );
 
-  const handleDelete = useCallback(async (id: string) => {
-    await deleteProject(id);
-    setProjects((prev) => prev.filter((p) => p.id !== id));
-  }, []);
+  const handleDelete = useCallback(
+    async (id: string) => {
+      await deleteProject(id);
+      revalidator.revalidate();
+    },
+    [revalidator]
+  );
 
   return (
     <div className="mx-auto min-h-screen max-w-5xl px-6 py-10">

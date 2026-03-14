@@ -62,24 +62,20 @@ const ThreadHistory = React.forwardRef<HTMLDivElement, ThreadHistoryProps>(
   ) => {
     const [searchQuery, setSearchQuery] = React.useState("");
     const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed);
-    const [shouldFocusSearch, setShouldFocusSearch] = React.useState(false);
 
     const { data: threads, isLoading, error, refetch } = useTamboThreadList();
 
     const { switchThread, startNewThread, currentThreadId } = useTambo();
 
-    // Update CSS variable when sidebar collapses/expands
-    React.useEffect(() => {
-      const sidebarWidth = isCollapsed ? "3rem" : "16rem";
-      document.documentElement.style.setProperty("--sidebar-width", sidebarWidth);
-    }, [isCollapsed]);
-
-    // Focus search input when expanded from collapsed state
-    React.useEffect(() => {
-      if (!isCollapsed && shouldFocusSearch) {
-        setShouldFocusSearch(false);
-      }
-    }, [isCollapsed, shouldFocusSearch]);
+    // Wrap setIsCollapsed to also update the CSS variable
+    const handleSetIsCollapsed = React.useCallback((value: React.SetStateAction<boolean>) => {
+      setIsCollapsed((prev) => {
+        const next = typeof value === "function" ? value(prev) : value;
+        const sidebarWidth = next ? "3rem" : "16rem";
+        document.documentElement.style.setProperty("--sidebar-width", sidebarWidth);
+        return next;
+      });
+    }, []);
 
     const contextValue = React.useMemo(
       () => ({
@@ -93,7 +89,7 @@ const ThreadHistory = React.forwardRef<HTMLDivElement, ThreadHistoryProps>(
         searchQuery,
         setSearchQuery,
         isCollapsed,
-        setIsCollapsed,
+        setIsCollapsed: handleSetIsCollapsed,
         onThreadChange,
         position,
       }),
@@ -107,6 +103,7 @@ const ThreadHistory = React.forwardRef<HTMLDivElement, ThreadHistoryProps>(
         startNewThread,
         searchQuery,
         isCollapsed,
+        handleSetIsCollapsed,
         onThreadChange,
         position,
       ]
@@ -327,7 +324,12 @@ const ThreadHistoryList = React.forwardRef<HTMLDivElement, React.HTMLAttributes<
     // Handle click outside name editing input
     React.useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
-        if (editingThread && inputRef.current && !inputRef.current.contains(event.target as Node)) {
+        if (
+          editingThread &&
+          inputRef.current &&
+          event.target instanceof Node &&
+          !inputRef.current.contains(event.target)
+        ) {
           setEditingThread(null);
         }
       };
