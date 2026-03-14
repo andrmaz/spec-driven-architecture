@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
-import { useNavigate } from "react-router";
-import { Plus } from "lucide-react";
+import { useNavigate, useNavigation } from "react-router";
+import { Loader2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { listProjects, createProject, deleteProject } from "@/lib/api";
 import type { Project } from "@/lib/api";
@@ -27,6 +27,8 @@ export default function Dashboard({ loaderData }: Route.ComponentProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const navigation = useNavigation();
+  const isNavigating = navigation.state === "loading";
 
   const handleCreate = useCallback(
     async (data: { name: string; description?: string }) => {
@@ -91,6 +93,18 @@ export default function Dashboard({ loaderData }: Route.ComponentProps) {
         onSubmit={handleCreate}
         isSubmitting={isSubmitting}
       />
+
+      {/* Navigation loading overlay */}
+      {isNavigating && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm dark:bg-gray-950/80">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
+              Setting up your project...
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -20,8 +20,11 @@ export function StepProgress({ steps, currentStep }: StepProgressProps) {
     <div className="flex items-center gap-2 overflow-x-auto rounded-xl border border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-900">
       {items.map((step, i) => {
         const stepNumber = i + 1;
-        const isCompleted = step.status === "completed" || stepNumber < (currentStep ?? 1);
-        const isActive = step.status === "active" || stepNumber === (currentStep ?? 1);
+        const isCompleted =
+          step.status === "completed" || stepNumber < (currentStep ?? 1) || (currentStep ?? 1) > 5;
+        const isActive =
+          step.status === "active" ||
+          (stepNumber === (currentStep ?? 1) && (currentStep ?? 1) <= 5);
 
         return (
           <div key={step.name ?? i} className="flex items-center gap-2">

@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router";
-import { TamboProvider } from "@tambo-ai/react";
+import { TamboProvider, useTambo, useTamboThreadInput } from "@tambo-ai/react";
 import { ArrowLeft, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getProject } from "@/lib/api";
@@ -17,6 +17,24 @@ export function meta() {
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   const project = await getProject(params.id);
   return { project };
+}
+
+function AutoWelcome() {
+  const { messages, isIdle } = useTambo();
+  const { setValue, submit } = useTamboThreadInput();
+  const sent = useRef(false);
+
+  useEffect(() => {
+    if (sent.current || !isIdle || messages.length > 0) return;
+    sent.current = true;
+    setValue("Hello! I just created a new project. Let's get started.");
+    // Defer submit to next tick so the value is committed
+    const id = setTimeout(() => void submit(), 0);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isIdle, messages.length]);
+
+  return null;
 }
 
 function ProjectWorkspaceInner({ project: initial }: { project: ProjectWithRelations }) {
@@ -117,7 +135,8 @@ function ProjectWorkspaceInner({ project: initial }: { project: ProjectWithRelat
               }),
             }}
           >
-            <MessageThreadPanel />
+            <AutoWelcome />
+            <MessageThreadPanel fullWidth />
           </TamboProvider>
         </main>
       </div>

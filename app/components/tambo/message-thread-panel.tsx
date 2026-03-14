@@ -44,6 +44,8 @@ export interface MessageThreadPanelProps extends React.HTMLAttributes<HTMLDivEle
    * @example variant="compact"
    */
   variant?: VariantProps<typeof messageVariants>["variant"];
+  /** When true, the panel fills its parent container instead of using a fixed width */
+  fullWidth?: boolean;
 }
 
 /**
@@ -54,6 +56,8 @@ interface ResizablePanelProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
   /** Whether the panel should be positioned on the left (true) or right (false) */
   isLeftPanel: boolean;
+  /** When true, the panel fills its parent container instead of using a fixed width */
+  fullWidth?: boolean;
 }
 
 const DEFAULT_SIDEBAR_WIDTH = 600; // Default width for the history sidebar
@@ -62,7 +66,7 @@ const MIN_SIDEBAR_WIDTH = 300; // Minimum width for the history sidebar
  * A resizable panel component with a draggable divider
  */
 const ResizablePanel = React.forwardRef<HTMLDivElement, ResizablePanelProps>(
-  ({ className, children, isLeftPanel, ...props }, ref) => {
+  ({ className, children, isLeftPanel, fullWidth, ...props }, ref) => {
     const [width, setWidth] = React.useState(DEFAULT_SIDEBAR_WIDTH);
     const isResizing = React.useRef(false);
     const lastUpdateRef = React.useRef(0);
@@ -120,37 +124,40 @@ const ResizablePanel = React.forwardRef<HTMLDivElement, ResizablePanelProps>(
           isLeftPanel ? "border-r border-border" : "border-l border-border ml-auto",
           className
         )}
-        style={{
-          width: `${width}px`,
-          flex: "0 0 auto",
-        }}
+        style={
+          fullWidth
+            ? { width: "100%", flex: "1 1 auto" }
+            : { width: `${width}px`, flex: "0 0 auto" }
+        }
         {...props}
       >
-        {/* Always show resize handle */}
-        <div
-          className={cn(
-            "absolute top-0 bottom-0 w-1 cursor-ew-resize bg-border hover:bg-accent transition-colors z-50",
+        {/* Resize handle (hidden in fullWidth mode) */}
+        {!fullWidth && (
+          <div
+            className={cn(
+              "absolute top-0 bottom-0 w-1 cursor-ew-resize bg-border hover:bg-accent transition-colors z-50",
 
-            isLeftPanel ? "right-0" : "left-0"
-          )}
-          onMouseDown={(e) => {
-            e.preventDefault();
-            isResizing.current = true;
-            document.body.style.cursor = "ew-resize";
-            document.body.style.userSelect = "none";
-            document.addEventListener("mousemove", handleMouseMove);
-            document.addEventListener(
-              "mouseup",
-              () => {
-                isResizing.current = false;
-                document.body.style.cursor = "";
-                document.body.style.userSelect = "";
-                document.removeEventListener("mousemove", handleMouseMove);
-              },
-              { once: true }
-            );
-          }}
-        />
+              isLeftPanel ? "right-0" : "left-0"
+            )}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              isResizing.current = true;
+              document.body.style.cursor = "ew-resize";
+              document.body.style.userSelect = "none";
+              document.addEventListener("mousemove", handleMouseMove);
+              document.addEventListener(
+                "mouseup",
+                () => {
+                  isResizing.current = false;
+                  document.body.style.cursor = "";
+                  document.body.style.userSelect = "";
+                  document.removeEventListener("mousemove", handleMouseMove);
+                },
+                { once: true }
+              );
+            }}
+          />
+        )}
         {children}
       </div>
     );
@@ -171,7 +178,7 @@ ResizablePanel.displayName = "ResizablePanel";
  * ```
  */
 export const MessageThreadPanel = React.forwardRef<HTMLDivElement, MessageThreadPanelProps>(
-  ({ className, variant, ...props }, ref) => {
+  ({ className, variant, fullWidth, ...props }, ref) => {
     const panelRef = useRef<HTMLDivElement>(null);
     const { hasCanvasSpace, canvasIsOnLeft } = useCanvasDetection(panelRef);
     const { isLeftPanel, historyPosition } = usePositioning(
@@ -203,7 +210,13 @@ export const MessageThreadPanel = React.forwardRef<HTMLDivElement, MessageThread
     ];
 
     return (
-      <ResizablePanel ref={mergedRef} isLeftPanel={isLeftPanel} className={className} {...props}>
+      <ResizablePanel
+        ref={mergedRef}
+        isLeftPanel={isLeftPanel}
+        fullWidth={fullWidth}
+        className={className}
+        {...props}
+      >
         <div className="flex h-full relative">
           {historyPosition === "left" && (
             <div

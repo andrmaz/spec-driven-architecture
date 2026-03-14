@@ -177,17 +177,23 @@ export function createTools(projectId: string): TamboTool[] {
     name: "advanceStep",
     description:
       "Advance the project to the next architecture step. Call this after the current step is complete and data has been saved. " +
-      "Steps: 1=Characteristics, 2=Components, 3=Architecture Style, 4=Decisions, 5=Diagrams.",
+      "Steps: 1=Characteristics, 2=Components, 3=Architecture Style, 4=Decisions, 5=Diagrams, 6=Project Complete (all steps finished).",
     inputSchema: z.object({
       nextStep: z
         .number()
         .min(1)
-        .max(5)
-        .describe("The step number to advance to (must be current + 1)"),
+        .max(6)
+        .describe(
+          "The step number to advance to (1-5 for next step, 6 to mark the project as complete)"
+        ),
     }),
     tool: async ({ nextStep }) => {
       await api.updateProject(projectId, { currentStep: nextStep });
-      return { success: true, message: `Advanced to step ${nextStep}` };
+      return {
+        success: true,
+        message:
+          nextStep <= 5 ? `Advanced to step ${nextStep}` : "Project completed! All steps finished.",
+      };
     },
   });
 

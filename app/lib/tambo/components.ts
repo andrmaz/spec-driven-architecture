@@ -11,12 +11,14 @@ import { StyleComparisonChart } from "../../components/architecture/style-compar
 import { DecisionRecord } from "../../components/architecture/decision-record";
 import { ArchitectureDiagram } from "../../components/architecture/architecture-diagram";
 import { StepProgress } from "../../components/architecture/step-progress";
+import { MultipleChoiceQuestion } from "../../components/architecture/multiple-choice-question";
 
 import {
   CharacteristicItemSchema,
   LogicalComponentItemSchema,
   StyleItemSchema,
   StepItemSchema,
+  MultipleChoiceOptionSchema,
 } from "./schemas";
 
 export const components: TamboComponent[] = [
@@ -116,7 +118,27 @@ export const components: TamboComponent[] = [
       "Use when transitioning between steps or when the user asks about progress.",
     propsSchema: z.object({
       steps: z.array(StepItemSchema).optional().describe("List of step items with name and status"),
-      currentStep: z.number().min(1).max(5).optional().describe("Current active step number (1-5)"),
+      currentStep: z
+        .number()
+        .min(1)
+        .max(6)
+        .optional()
+        .describe("Current active step number (1-5, or 6 = completed)"),
+    }),
+  },
+  {
+    name: "MultipleChoiceQuestion",
+    component: MultipleChoiceQuestion,
+    description:
+      "Renders a question with 2-5 clickable option buttons. When the user clicks an option, their choice is automatically submitted as a message. " +
+      "ALWAYS use this component instead of listing options in text when asking the user to choose between predefined options. " +
+      "Examples: picking a domain type, selecting top characteristics, choosing an architecture style, confirming a decision.",
+    propsSchema: z.object({
+      question: z.string().optional().describe("The question to present to the user"),
+      options: z
+        .array(MultipleChoiceOptionSchema)
+        .optional()
+        .describe("2-5 options the user can click to answer"),
     }),
   },
 ];

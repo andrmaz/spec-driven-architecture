@@ -15,9 +15,9 @@ export function StepSidebar({ currentStep, onStepClick }: StepSidebarProps) {
       </h2>
       {STEPS.map((step, index) => {
         const stepNumber = index + 1;
-        const isCompleted = stepNumber < currentStep;
-        const isActive = stepNumber === currentStep;
-        const isLocked = stepNumber > currentStep;
+        const isCompleted = stepNumber < currentStep || currentStep > 5;
+        const isActive = stepNumber === currentStep && currentStep <= 5;
+        const isLocked = stepNumber > currentStep && currentStep <= 5;
         const Icon = step.icon;
 
         return (
