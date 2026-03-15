@@ -37,7 +37,7 @@ const CreateProjectSchema = z.object({
 const UpdateProjectSchema = z.object({
   name: z.string().min(1).max(255).optional(),
   description: z.string().optional(),
-  currentStep: z.number().int().min(1).max(5).optional(),
+  currentStep: z.number().int().min(1).max(6).optional(),
   tamboThreadId: z.string().max(255).optional(),
 });
 

@@ -79,7 +79,7 @@ function ProjectWorkspaceInner({ project }: { project: ProjectWithRelations }) {
               {project.name}
             </h1>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Step {project.currentStep} of 5
+              {project.currentStep > 5 ? "All steps complete" : `Step ${project.currentStep} of 5`}
             </p>
           </div>
         </div>

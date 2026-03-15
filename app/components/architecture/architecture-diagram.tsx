@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import DOMPurify from "dompurify";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, Code, Eye } from "lucide-react";
 
@@ -96,14 +97,14 @@ export function ArchitectureDiagram({ title, mermaidCode, diagramType }: Archite
         mermaid.default.initialize({
           startOnLoad: false,
           theme: "neutral",
-          securityLevel: "loose",
+          securityLevel: "strict",
           suppressErrorRendering: true,
         });
         const sanitized = sanitizeMermaidCode(mermaidCode!);
         const id = `mermaid-${Date.now()}-${Math.random().toString(36).slice(2)}`;
         const { svg: renderedSvg } = await mermaid.default.render(id, sanitized);
         if (!cancelled) {
-          setSvg(renderedSvg);
+          setSvg(DOMPurify.sanitize(renderedSvg, { USE_PROFILES: { svg: true, svgFilters: true } }));
           setError(null);
         }
       } catch (err) {
