@@ -72,9 +72,9 @@ export function useMergeRefs<Instance>(
             };
       }
 
-      (ref as React.MutableRefObject<Instance | null>).current = instance;
+      ref.current = instance;
       return () => {
-        (ref as React.MutableRefObject<Instance | null>).current = null;
+        ref.current = null;
       };
     });
 
@@ -124,16 +124,24 @@ export function useCanvasDetection(elementRef: React.RefObject<HTMLElement | nul
       }
     };
 
-    // Check on mount and after a short delay to ensure DOM is fully rendered
+    // Check on mount
     checkCanvas();
-    const timeoutId = setTimeout(checkCanvas, 100);
 
     // Re-check on window resize
     window.addEventListener("resize", checkCanvas);
 
+    // Observe DOM changes to detect canvas appearing/disappearing
+    const observer = new MutationObserver(checkCanvas);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["data-canvas-space"],
+    });
+
     return () => {
-      clearTimeout(timeoutId);
       window.removeEventListener("resize", checkCanvas);
+      observer.disconnect();
     };
   }, [elementRef]);
 
@@ -173,44 +181,6 @@ export function usePositioning(className?: string, canvasIsOnLeft = false, hasCa
   }
 
   return { isLeftPanel, historyPosition };
-}
-
-/**
- * Converts message content into a safely renderable format.
- * Handles text, resource references, and other content types.
- *
- * @deprecated This function is deprecated. Message rendering now uses a private
- * `convertContentToMarkdown()` function within the message component. This function
- * is kept for backward compatibility since it's exposed in the SDK.
- *
- * @param content - The message content (string, element, array, etc.)
- * @returns A renderable string or React element.
- */
-export function getSafeContent(
-  content: TamboThreadMessage["content"] | React.ReactNode | undefined | null
-): string | React.ReactElement {
-  if (!content) return "";
-  if (typeof content === "string") return content;
-  if (React.isValidElement(content)) return content; // Pass elements through
-  if (Array.isArray(content)) {
-    // Map content parts to strings, including resource references
-    const parts: string[] = [];
-    for (const item of content) {
-      if (item?.type === "text") {
-        parts.push(item.text ?? "");
-      } else if (item?.type === "resource") {
-        // Format resource references as @uri (uri already contains serverKey prefix if applicable)
-        const uri = item.resource?.uri;
-        if (uri) {
-          parts.push(`@${uri}`);
-        }
-      }
-    }
-    return parts.join(" ");
-  }
-  // Handle potential edge cases or unknown types
-  // console.warn("getSafeContent encountered unknown content type:", content);
-  return "Invalid content format"; // Or handle differently
 }
 
 /**

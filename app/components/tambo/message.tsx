@@ -23,8 +23,32 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { Check, ChevronDown, ExternalLink, Loader2, X } from "lucide-react";
 import * as React from "react";
 import { Streamdown } from "streamdown";
-import { getSafeContent } from "../../lib/thread-hooks";
 import { createMarkdownComponents, markdownComponents } from "./markdown-components";
+
+/**
+ * Extract display text from mixed message content.
+ * Replaces the deprecated `getSafeContent` utility.
+ */
+function contentToString(
+  content: TamboThreadMessage["content"] | React.ReactNode | undefined | null
+): string | React.ReactElement {
+  if (!content) return "";
+  if (typeof content === "string") return content;
+  if (React.isValidElement(content)) return content;
+  if (Array.isArray(content)) {
+    const parts: string[] = [];
+    for (const item of content) {
+      if (item?.type === "text") {
+        parts.push(item.text ?? "");
+      } else if (item?.type === "resource") {
+        const uri = item.resource?.uri;
+        if (uri) parts.push(`@${uri}`);
+      }
+    }
+    return parts.join(" ");
+  }
+  return "Invalid content format";
+}
 
 /**
  * CSS variants for the message container
@@ -435,7 +459,7 @@ const SamplingSubThread = ({
                     m.role === "assistant" && "bg-muted/50 rounded-md p-2 inline-block w-fit"
                   )}
                 >
-                  {getSafeContent(m.content)}
+                  {contentToString(m.content)}
                 </span>
               </div>
             ))}
@@ -659,7 +683,7 @@ function ToolResultContent({
   }
 
   // Fallback for unknown content types
-  return getSafeContent(content);
+  return contentToString(content);
 }
 
 /**

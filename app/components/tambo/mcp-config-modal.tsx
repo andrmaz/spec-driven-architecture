@@ -49,7 +49,17 @@ export const McpConfigModal = ({
   const [serverName, setServerName] = React.useState("");
   const [transportType, setTransportType] = React.useState<MCPTransport>(MCPTransport.HTTP);
   const [savedSuccess, setSavedSuccess] = React.useState(false);
+  const savedSuccessTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showInstructions, setShowInstructions] = React.useState(false);
+
+  // Clear savedSuccess timer on unmount to avoid state update on unmounted component
+  React.useEffect(() => {
+    return () => {
+      if (savedSuccessTimerRef.current !== null) {
+        clearTimeout(savedSuccessTimerRef.current);
+      }
+    };
+  }, []);
 
   // Handle Escape key to close modal
   React.useEffect(() => {
@@ -68,25 +78,16 @@ export const McpConfigModal = ({
     };
   }, [isOpen, onClose]);
 
-  // Save servers to localStorage when updated and emit events
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("mcp-servers", JSON.stringify(mcpServers));
-
-      // Emit custom event to notify other components in the same tab
-      window.dispatchEvent(
-        new CustomEvent("mcp-servers-updated", {
-          detail: mcpServers,
-        })
-      );
-
-      if (mcpServers.length > 0) {
-        setSavedSuccess(true);
-        const timer = setTimeout(() => setSavedSuccess(false), 2000);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [mcpServers]);
+  // Persist servers to localStorage and notify other components
+  function persistServers(servers: McpServerInfo[]) {
+    if (typeof window === "undefined") return;
+    localStorage.setItem("mcp-servers", JSON.stringify(servers));
+    window.dispatchEvent(
+      new CustomEvent("mcp-servers-updated", {
+        detail: servers,
+      })
+    );
+  }
 
   const addServer = (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,7 +97,14 @@ export const McpConfigModal = ({
         transport: transportType,
         ...(serverName.trim() ? { name: serverName.trim() } : {}),
       };
-      setMcpServers((prev) => [...prev, serverConfig]);
+      const next = [...mcpServers, serverConfig];
+      setMcpServers(next);
+      persistServers(next);
+      setSavedSuccess(true);
+      if (savedSuccessTimerRef.current !== null) {
+        clearTimeout(savedSuccessTimerRef.current);
+      }
+      savedSuccessTimerRef.current = setTimeout(() => setSavedSuccess(false), 2000);
 
       // Reset form fields
       setServerUrl("");
@@ -106,7 +114,9 @@ export const McpConfigModal = ({
   };
 
   const removeServer = (index: number) => {
-    setMcpServers((prev) => prev.filter((_, i) => i !== index));
+    const next = mcpServers.filter((_, i) => i !== index);
+    setMcpServers(next);
+    persistServers(next);
   };
 
   // Helper function to get server display information

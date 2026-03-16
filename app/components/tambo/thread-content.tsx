@@ -168,6 +168,8 @@ const ThreadContentMessages = React.forwardRef<HTMLDivElement, ThreadContentMess
                 >
                   <ReasoningInfo />
                   <MessageImages />
+                  <ToolcallInfo />
+                  <MessageRenderedComponentArea className="w-full" />
                   <MessageContent
                     className={
                       message.role === "assistant"
@@ -175,8 +177,6 @@ const ThreadContentMessages = React.forwardRef<HTMLDivElement, ThreadContentMess
                         : "text-foreground bg-container hover:bg-backdrop font-sans"
                     }
                   />
-                  <ToolcallInfo />
-                  <MessageRenderedComponentArea className="w-full" />
                 </div>
               </Message>
             </div>
