@@ -11,8 +11,9 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ project, onDelete }: ProjectCardProps) {
+  const isCompleted = project.currentStep > TOTAL_STEPS;
   const stepLabel = getStepLabel(project.currentStep);
-  const progress = (project.currentStep / TOTAL_STEPS) * 100;
+  const progress = Math.min((project.currentStep / TOTAL_STEPS) * 100, 100);
 
   return (
     <div
@@ -74,15 +75,25 @@ export function ProjectCard({ project, onDelete }: ProjectCardProps) {
       <div className="mt-4">
         <div className="mb-1.5 flex items-center justify-between text-xs">
           <span className="font-medium text-gray-600 dark:text-gray-400">
-            Step {project.currentStep}/{TOTAL_STEPS}
+            {isCompleted ? "All steps complete" : `Step ${project.currentStep}/${TOTAL_STEPS}`}
           </span>
-          <span className="rounded-full bg-blue-100 px-2 py-0.5 font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+          <span
+            className={cn(
+              "rounded-full px-2 py-0.5 font-medium",
+              isCompleted
+                ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
+                : "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+            )}
+          >
             {stepLabel}
           </span>
         </div>
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
           <div
-            className="h-full rounded-full bg-blue-500 transition-all"
+            className={cn(
+              "h-full rounded-full transition-all",
+              isCompleted ? "bg-green-500" : "bg-blue-500"
+            )}
             style={{ width: `${progress}%` }}
           />
         </div>

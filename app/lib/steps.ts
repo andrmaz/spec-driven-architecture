@@ -23,5 +23,6 @@ export const STEPS: StepMeta[] = [
 export const TOTAL_STEPS = STEPS.length;
 
 export function getStepLabel(step: number): string {
+  if (step > TOTAL_STEPS) return "Completed";
   return STEPS[step - 1]?.label ?? "Unknown";
 }

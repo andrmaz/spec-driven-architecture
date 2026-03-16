@@ -45,14 +45,16 @@ export default function ExportPage({ loaderData }: Route.ComponentProps) {
     ];
     project.decisions.forEach((d, i) => {
       const num = String(i + 1).padStart(3, "0");
+      const slug = slugify(d.title) || `decision-${num}`;
       f.push({
-        path: `decisions/${num}-${slugify(d.title)}.md`,
+        path: `decisions/${num}-${slug}.md`,
         content: generateDecision(d, i),
       });
     });
-    project.diagrams.forEach((d) => {
+    project.diagrams.forEach((d, i) => {
+      const slug = slugify(d.title) || `diagram-${i + 1}`;
       f.push({
-        path: `diagrams/${slugify(d.title)}.md`,
+        path: `diagrams/${slug}.md`,
         content: generateDiagram(d),
       });
     });
@@ -61,7 +63,7 @@ export default function ExportPage({ loaderData }: Route.ComponentProps) {
 
   const handleDownload = useCallback(async () => {
     const zip = new JSZip();
-    const folderName = sanitizeFilename(project.name);
+    const folderName = sanitizeFilename(project.name) || `project-${project.id.slice(0, 8)}`;
     const folder = zip.folder(folderName) ?? zip;
     for (const file of files) {
       folder.file(file.path, file.content);
