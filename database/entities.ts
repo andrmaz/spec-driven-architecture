@@ -49,6 +49,7 @@ export const CharacteristicInsert = createInsertSchema(schema.architecturalChara
 
 export const ComponentInsert = createInsertSchema(schema.logicalComponents, {
   name: z.string().min(1).max(255),
+  dependencies: z.array(z.string()).optional().nullable(),
 }).omit({ id: true, projectId: true });
 
 export const StyleInsert = createInsertSchema(schema.architecturalStyles, {
