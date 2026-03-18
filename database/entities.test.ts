@@ -82,9 +82,7 @@ describe("ProjectUpdate", () => {
 
 describe("CharacteristicInsert", () => {
   it("accepts a valid characteristic", () => {
-    expect(
-      CharacteristicInsert.safeParse({ name: "Scalability", rating: 4 }).success
-    ).toBe(true);
+    expect(CharacteristicInsert.safeParse({ name: "Scalability", rating: 4 }).success).toBe(true);
   });
 
   it("accepts optional fields", () => {
@@ -111,9 +109,7 @@ describe("CharacteristicInsert", () => {
   });
 
   it("rejects a rating below 0", () => {
-    expect(CharacteristicInsert.safeParse({ name: "Scalability", rating: -1 }).success).toBe(
-      false
-    );
+    expect(CharacteristicInsert.safeParse({ name: "Scalability", rating: -1 }).success).toBe(false);
   });
 
   it("does not include id or projectId", () => {
@@ -298,18 +294,18 @@ describe("TamboDiagram", () => {
 
 describe("TamboStyleRating", () => {
   it("accepts a valid rating", () => {
-    expect(
-      TamboStyleRating.safeParse({ characteristic: "Scalability", rating: 4 }).success
-    ).toBe(true);
+    expect(TamboStyleRating.safeParse({ characteristic: "Scalability", rating: 4 }).success).toBe(
+      true
+    );
   });
 
   it("rejects a rating outside 1-5", () => {
-    expect(
-      TamboStyleRating.safeParse({ characteristic: "Scalability", rating: 0 }).success
-    ).toBe(false);
-    expect(
-      TamboStyleRating.safeParse({ characteristic: "Scalability", rating: 6 }).success
-    ).toBe(false);
+    expect(TamboStyleRating.safeParse({ characteristic: "Scalability", rating: 0 }).success).toBe(
+      false
+    );
+    expect(TamboStyleRating.safeParse({ characteristic: "Scalability", rating: 6 }).success).toBe(
+      false
+    );
   });
 });
 

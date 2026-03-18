@@ -121,9 +121,7 @@ export const TamboStyle = z.object({
 
 // ── Style shape mapping ────────────────────────────────
 
-export function tamboStyleToDb(
-  item: z.infer<typeof TamboStyle>
-): z.infer<typeof StyleInsert> {
+export function tamboStyleToDb(item: z.infer<typeof TamboStyle>): z.infer<typeof StyleInsert> {
   const starRatings: Record<string, number> = {};
   for (const r of item.ratings ?? []) {
     starRatings[r.characteristic] = r.rating;

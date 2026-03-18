@@ -5,11 +5,7 @@
 
 // ── Types ──────────────────────────────────────────────
 
-import type {
-  ArchitectureDecision,
-  Project,
-  ProjectWithRelations,
-} from "~/database/entities";
+import type { ArchitectureDecision, Project, ProjectWithRelations } from "~/database/entities";
 
 export type {
   Project,
