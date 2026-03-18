@@ -44,10 +44,7 @@ function ProjectWorkspaceInner({ project }: { project: ProjectWithRelations }) {
 
   // Create project-scoped tools; revalidate the route after a step advance.
   // revalidateRef keeps the closure up-to-date without recreating tools.
-  const tools = useMemo(
-    () => createTools(project.id, () => revalidateRef.current()),
-    [project.id]
-  );
+  const tools = useMemo(() => createTools(project.id, () => revalidateRef.current()), [project.id]);
 
   // Get system prompt for current step
   const systemPrompt = useMemo(() => getSystemPrompt(project.currentStep), [project.currentStep]);
