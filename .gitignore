@@ -2,7 +2,6 @@
 .env
 /node_modules/
 *.tsbuildinfo
-package-lock.json
 
 # React Router
 /.react-router/
