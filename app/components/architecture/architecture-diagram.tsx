@@ -5,7 +5,7 @@ import { AlertTriangle, Code, Eye } from "lucide-react";
 
 import { CardHeader } from "../ui/card-header";
 import { EmptyCard } from "../ui/empty-card";
-import { sanitizeMermaidCode } from "~/lib/mermaid";
+import { sanitizeMermaidCode } from "@/lib/mermaid";
 
 interface ArchitectureDiagramProps {
   title?: string;

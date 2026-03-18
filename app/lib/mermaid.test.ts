@@ -13,9 +13,7 @@ describe("sanitizeMermaidCode", () => {
     });
 
     it("trims leading and trailing whitespace", () => {
-      expect(sanitizeMermaidCode("  flowchart TD\n  A --> B  ")).toBe(
-        "flowchart TD\n  A --> B"
-      );
+      expect(sanitizeMermaidCode("  flowchart TD\n  A --> B  ")).toBe("flowchart TD\n  A --> B");
     });
   });
 
@@ -112,7 +110,7 @@ describe("sanitizeMermaidCode", () => {
       expect(result).toContain('  subgraph myGroup["My Group"]');
     });
 
-    it("converts subgraph id[[Label]] (unquoted) to subgraph id[\"Label\"]", () => {
+    it('converts subgraph id[[Label]] (unquoted) to subgraph id["Label"]', () => {
       const input = "flowchart TD\n  subgraph myGroup[[My Group]]\n    A --> B\n  end";
       const result = sanitizeMermaidCode(input);
       expect(result).toContain('  subgraph myGroup["My Group"]');
