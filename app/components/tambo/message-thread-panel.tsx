@@ -26,11 +26,150 @@ import {
   ThreadHistoryNewButton,
   ThreadHistorySearch,
 } from "@/components/tambo/thread-history";
-import { useCanvasDetection, useMergeRefs, usePositioning } from "@/lib/thread-hooks";
 import { cn } from "@/lib/utils";
 import type { VariantProps } from "class-variance-authority";
 import * as React from "react";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+
+/**
+ * Merges multiple refs into a single callback ref.
+ *
+ * In React 19, callback refs may return cleanup functions; this hook fans out
+ * both assignments and cleanups to all provided refs and tracks the last
+ * cleanup so it runs when the instance changes.
+ */
+function useMergeRefs<Instance>(
+  ...refs: (React.Ref<Instance> | undefined)[]
+): null | React.RefCallback<Instance> {
+  const cleanupRef = React.useRef<void | (() => void)>(undefined);
+
+  const refEffect = React.useCallback((instance: Instance | null) => {
+    const cleanups = refs.map((ref) => {
+      if (ref == null) {
+        return;
+      }
+
+      if (typeof ref === "function") {
+        const refCallback = ref;
+        const refCleanup: void | (() => void) = refCallback(instance);
+        return typeof refCleanup === "function"
+          ? refCleanup
+          : () => {
+              refCallback(null);
+            };
+      }
+
+      ref.current = instance;
+      return () => {
+        ref.current = null;
+      };
+    });
+
+    return () => {
+      cleanups.forEach((refCleanup) => refCleanup?.());
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, refs);
+
+  return React.useMemo(() => {
+    if (refs.every((ref) => ref == null)) {
+      return null;
+    }
+
+    return (value) => {
+      if (cleanupRef.current) {
+        cleanupRef.current();
+        (cleanupRef as React.MutableRefObject<void | (() => void)>).current = undefined;
+      }
+
+      if (value != null) {
+        (cleanupRef as React.MutableRefObject<void | (() => void)>).current = refEffect(value);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refEffect, ...refs]);
+}
+
+/**
+ * Custom hook to detect canvas space presence and position
+ * @param elementRef - Reference to the component to compare position with
+ * @returns Object containing hasCanvasSpace and canvasIsOnLeft
+ */
+function useCanvasDetection(elementRef: React.RefObject<HTMLElement | null>) {
+  const [hasCanvasSpace, setHasCanvasSpace] = useState(false);
+  const [canvasIsOnLeft, setCanvasIsOnLeft] = useState(false);
+
+  useEffect(() => {
+    const checkCanvas = () => {
+      const canvas = document.querySelector('[data-canvas-space="true"]');
+      setHasCanvasSpace(!!canvas);
+
+      if (canvas && elementRef.current) {
+        // Check if canvas appears before this component in the DOM
+        const canvasRect = canvas.getBoundingClientRect();
+        const elemRect = elementRef.current.getBoundingClientRect();
+        setCanvasIsOnLeft(canvasRect.left < elemRect.left);
+      }
+    };
+
+    // Check on mount
+    checkCanvas();
+
+    // Re-check on window resize
+    window.addEventListener("resize", checkCanvas);
+
+    // Observe DOM changes to detect canvas appearing/disappearing
+    const observer = new MutationObserver(checkCanvas);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["data-canvas-space"],
+    });
+
+    return () => {
+      window.removeEventListener("resize", checkCanvas);
+      observer.disconnect();
+    };
+  }, [elementRef]);
+
+  return { hasCanvasSpace, canvasIsOnLeft };
+}
+
+/**
+ * Utility to check if a className string contains the "right" class
+ * @param className - The className string to check
+ * @returns true if the className contains "right", false otherwise
+ */
+function hasRightClass(className?: string): boolean {
+  return className ? /(?:^|\s)right(?:\s|$)/i.test(className) : false;
+}
+
+/**
+ * Hook to calculate sidebar and history positions based on className and canvas position
+ * @param className - Component's className string
+ * @param canvasIsOnLeft - Whether the canvas is on the left
+ * @returns Object with isLeftPanel and historyPosition values
+ */
+function usePositioning(className?: string, canvasIsOnLeft = false, hasCanvasSpace = false) {
+  const isRightClass = hasRightClass(className);
+  const isLeftPanel = !isRightClass;
+
+  // Determine history position
+  // If panel has right class, history should be on right
+  // If canvas is on left, history should be on right
+  // Otherwise, history should be on left
+  let historyPosition: "left" | "right";
+  if (isRightClass) {
+    historyPosition = "right";
+  } else if (hasCanvasSpace && canvasIsOnLeft) {
+    historyPosition = "right";
+  } else {
+    historyPosition = "left";
+  }
+
+  return { isLeftPanel, historyPosition };
+}
 
 /**
  * Props for the MessageThreadPanel component
