@@ -8,6 +8,7 @@ import { defineTool } from "@tambo-ai/react";
 import { z } from "zod/v4";
 
 import * as api from "../api";
+import { TamboStyle, tamboStyleToDb } from "~/database/entities";
 
 // ── Generic JSON Array Tool Factory ────────────────────
 
@@ -109,21 +110,13 @@ export function createTools(projectId: string, onStepAdvanced?: () => void): Tam
     name: "saveArchitectureStyle",
     description:
       "Save architecture style comparison to the database. Pass the data as a JSON string." +
-      ' Example: { "data": "[{\\"styleName\\":\\"Microservices\\",\\"starRatings\\":{\\"Scalability\\":5},\\"isSelected\\":true}]" }',
+      ' Example: { "data": "[{\\"name\\":\\"Microservices\\",\\"ratings\\":[{\\"characteristic\\":\\"Scalability\\",\\"rating\\":5}]}]" }',
     inputDescription:
-      'JSON string of an array of style objects. Each object must have: "styleName" (string). Optional: "rationale" (string), "starRatings" (object), "isSelected" (boolean).',
-    requiredFieldLabel: "styleName",
+      'JSON string of an array of style objects. Each object must have: "name" (string). Optional: "ratings" (array of { characteristic: string, rating: number 1-5 }).',
+    requiredFieldLabel: "name",
     entityLabel: "styles",
-    filter: (s) => typeof s.styleName === "string" && s.styleName.length > 0,
-    mapItem: (s) => ({
-      styleName: s.styleName,
-      rationale: typeof s.rationale === "string" ? s.rationale : undefined,
-      starRatings:
-        s.starRatings && typeof s.starRatings === "object" && !Array.isArray(s.starRatings)
-          ? (s.starRatings as Record<string, number>)
-          : {},
-      isSelected: typeof s.isSelected === "boolean" ? s.isSelected : false,
-    }),
+    filter: (s) => typeof s.name === "string" && s.name.length > 0,
+    mapItem: (s) => tamboStyleToDb(TamboStyle.parse(s)),
     save: (pid, items) => api.saveStyles(pid, items as Parameters<typeof api.saveStyles>[1]),
   });
 

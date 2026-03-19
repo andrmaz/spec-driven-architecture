@@ -5,69 +5,17 @@
 
 // ── Types ──────────────────────────────────────────────
 
-export interface Project {
-  id: string;
-  name: string;
-  description: string | null;
-  currentStep: number;
-  tamboThreadId: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
+import type { ArchitectureDecision, Project, ProjectWithRelations } from "~/database/entities";
 
-export interface Characteristic {
-  id: string;
-  projectId: string;
-  name: string;
-  rating: number;
-  description: string | null;
-  isTopThree: boolean;
-}
-
-export interface LogicalComponent {
-  id: string;
-  projectId: string;
-  name: string;
-  responsibility: string | null;
-  dependencies: string[] | null;
-  namespace: string | null;
-}
-
-export interface ArchitecturalStyle {
-  id: string;
-  projectId: string;
-  styleName: string;
-  rationale: string | null;
-  starRatings: Record<string, number> | null;
-  isSelected: boolean;
-}
-
-export interface ArchitectureDecision {
-  id: string;
-  projectId: string;
-  title: string;
-  status: "proposed" | "accepted" | "deprecated" | "superseded";
-  context: string | null;
-  decision: string | null;
-  consequences: string | null;
-  createdAt: string;
-}
-
-export interface ArchitectureDiagram {
-  id: string;
-  projectId: string;
-  title: string;
-  mermaidCode: string;
-  diagramType: "context" | "container" | "component" | "sequence" | "flowchart";
-}
-
-export interface ProjectWithRelations extends Project {
-  characteristics: Characteristic[];
-  components: LogicalComponent[];
-  styles: ArchitecturalStyle[];
-  decisions: ArchitectureDecision[];
-  diagrams: ArchitectureDiagram[];
-}
+export type {
+  Project,
+  Characteristic,
+  LogicalComponent,
+  ArchitecturalStyle,
+  ArchitectureDecision,
+  ArchitectureDiagram,
+  ProjectWithRelations,
+} from "~/database/entities";
 
 // ── Helpers ────────────────────────────────────────────
 

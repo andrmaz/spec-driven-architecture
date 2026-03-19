@@ -7,6 +7,15 @@ import { z } from "zod/v4";
 import "react-router";
 
 import { DatabaseContext } from "~/database/context";
+import {
+  CharacteristicInsert,
+  ComponentInsert,
+  DecisionInsert,
+  DiagramInsert,
+  ProjectCreate,
+  ProjectUpdate,
+  StyleInsert,
+} from "~/database/entities";
 import * as schema from "~/database/schema";
 
 declare module "react-router" {
@@ -27,55 +36,6 @@ app.use((_, __, next) => DatabaseContext.run(db, next));
 // ── JSON body parsing for API routes ───────────────────
 app.use("/api", express.json());
 
-// ── Validation Schemas ─────────────────────────────────
-
-const CreateProjectSchema = z.object({
-  name: z.string().min(1).max(255),
-  description: z.string().optional(),
-});
-
-const UpdateProjectSchema = z.object({
-  name: z.string().min(1).max(255).optional(),
-  description: z.string().optional(),
-  currentStep: z.number().int().min(1).max(6).optional(),
-  tamboThreadId: z.string().max(255).optional(),
-});
-
-const CharacteristicSchema = z.object({
-  name: z.string().min(1).max(255),
-  rating: z.number().int().min(0).max(5),
-  description: z.string().optional(),
-  isTopThree: z.boolean().default(false),
-});
-
-const ComponentSchema = z.object({
-  name: z.string().min(1).max(255),
-  responsibility: z.string().optional(),
-  dependencies: z.array(z.string()).optional(),
-  namespace: z.string().max(255).optional(),
-});
-
-const StyleSchema = z.object({
-  styleName: z.string().min(1).max(255),
-  rationale: z.string().optional(),
-  starRatings: z.record(z.string(), z.number()).optional(),
-  isSelected: z.boolean().default(false),
-});
-
-const DecisionSchema = z.object({
-  title: z.string().min(1).max(500),
-  status: z.enum(["proposed", "accepted", "deprecated", "superseded"]).optional(),
-  context: z.string().optional(),
-  decision: z.string().optional(),
-  consequences: z.string().optional(),
-});
-
-const DiagramSchema = z.object({
-  title: z.string().min(1).max(500),
-  mermaidCode: z.string().min(1),
-  diagramType: z.enum(["context", "container", "component", "sequence", "flowchart"]),
-});
-
 // ── Projects CRUD ──────────────────────────────────────
 
 app.get("/api/projects", async (_req, res) => {
@@ -87,7 +47,7 @@ app.get("/api/projects", async (_req, res) => {
 });
 
 app.post("/api/projects", async (req, res) => {
-  const parsed = CreateProjectSchema.safeParse(req.body);
+  const parsed = ProjectCreate.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
 
   const db = DatabaseContext.getStore()!;
@@ -112,7 +72,7 @@ app.get("/api/projects/:id", async (req, res) => {
 });
 
 app.put("/api/projects/:id", async (req, res) => {
-  const parsed = UpdateProjectSchema.safeParse(req.body);
+  const parsed = ProjectUpdate.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
 
   const db = DatabaseContext.getStore()!;
@@ -145,7 +105,7 @@ app.delete("/api/projects/:id", async (req, res) => {
 
 app.put("/api/projects/:id/characteristics", async (req, res) => {
   try {
-    const parsed = z.object({ characteristics: z.array(CharacteristicSchema) }).safeParse(req.body);
+    const parsed = z.object({ characteristics: z.array(CharacteristicInsert) }).safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
 
     const db = DatabaseContext.getStore()!;
@@ -174,7 +134,7 @@ app.put("/api/projects/:id/characteristics", async (req, res) => {
 
 app.put("/api/projects/:id/components", async (req, res) => {
   try {
-    const parsed = z.object({ components: z.array(ComponentSchema) }).safeParse(req.body);
+    const parsed = z.object({ components: z.array(ComponentInsert) }).safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
 
     const db = DatabaseContext.getStore()!;
@@ -201,7 +161,7 @@ app.put("/api/projects/:id/components", async (req, res) => {
 
 app.put("/api/projects/:id/styles", async (req, res) => {
   try {
-    const parsed = z.object({ styles: z.array(StyleSchema) }).safeParse(req.body);
+    const parsed = z.object({ styles: z.array(StyleInsert) }).safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
 
     const db = DatabaseContext.getStore()!;
@@ -228,7 +188,7 @@ app.put("/api/projects/:id/styles", async (req, res) => {
 
 app.post("/api/projects/:id/decisions", async (req, res) => {
   try {
-    const parsed = DecisionSchema.safeParse(req.body);
+    const parsed = DecisionInsert.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
 
     const db = DatabaseContext.getStore()!;
@@ -248,7 +208,7 @@ app.post("/api/projects/:id/decisions", async (req, res) => {
 
 app.put("/api/projects/:id/decisions/:decisionId", async (req, res) => {
   try {
-    const parsed = DecisionSchema.partial().safeParse(req.body);
+    const parsed = DecisionInsert.partial().safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
 
     const db = DatabaseContext.getStore()!;
@@ -281,7 +241,7 @@ app.put("/api/projects/:id/decisions/:decisionId", async (req, res) => {
 
 app.put("/api/projects/:id/diagrams", async (req, res) => {
   try {
-    const parsed = z.object({ diagrams: z.array(DiagramSchema) }).safeParse(req.body);
+    const parsed = z.object({ diagrams: z.array(DiagramInsert) }).safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
 
     const db = DatabaseContext.getStore()!;
