@@ -12,4 +12,8 @@ export default defineConfig(({ isSsrBuild }) => ({
       : undefined,
   },
   plugins: [tailwindcss(), reactRouter(), tsconfigPaths()],
+  test: {
+    environment: "node",
+    include: ["app/lib/**/*.test.ts"],
+  },
 }));

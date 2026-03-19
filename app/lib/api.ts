@@ -48,17 +48,14 @@ export function getProject(id: string) {
   return fetchJson<ProjectWithRelations>(`/api/projects/${id}`);
 }
 
-export async function updateProject(
+export function updateProject(
   id: string,
   data: Partial<Pick<Project, "name" | "description" | "currentStep" | "tamboThreadId">>
 ) {
-  const result = await fetchJson<Project>(`/api/projects/${id}`, {
+  return fetchJson<Project>(`/api/projects/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
   });
-  // Notify listeners (e.g. project route) of project changes
-  window.dispatchEvent(new CustomEvent("project-updated", { detail: { projectId: id, ...data } }));
-  return result;
 }
 
 export function deleteProject(id: string) {

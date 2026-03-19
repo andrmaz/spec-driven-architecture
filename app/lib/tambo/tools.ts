@@ -65,7 +65,7 @@ function createJsonArrayTool(projectId: string, config: JsonArrayToolConfig) {
 
 // ── Tool Definitions ───────────────────────────────────
 
-export function createTools(projectId: string): TamboTool[] {
+export function createTools(projectId: string, onStepAdvanced?: () => void): TamboTool[] {
   const saveCharacteristicsTool = createJsonArrayTool(projectId, {
     name: "saveCharacteristics",
     description:
@@ -186,6 +186,7 @@ export function createTools(projectId: string): TamboTool[] {
     }),
     tool: async ({ nextStep }) => {
       await api.updateProject(projectId, { currentStep: nextStep });
+      onStepAdvanced?.();
       return {
         success: true,
         message:

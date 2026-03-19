@@ -38,25 +38,16 @@ function AutoWelcome() {
 
 function ProjectWorkspaceInner({ project }: { project: ProjectWithRelations }) {
   const navigate = useNavigate();
-  const revalidator = useRevalidator();
+  const { revalidate } = useRevalidator();
+  const revalidateRef = useRef(revalidate);
+  revalidateRef.current = revalidate;
 
-  // Create project-scoped tools
-  const tools = useMemo(() => createTools(project.id), [project.id]);
+  // Create project-scoped tools; revalidate the route after a step advance.
+  // revalidateRef keeps the closure up-to-date without recreating tools.
+  const tools = useMemo(() => createTools(project.id, () => revalidateRef.current()), [project.id]);
 
   // Get system prompt for current step
   const systemPrompt = useMemo(() => getSystemPrompt(project.currentStep), [project.currentStep]);
-
-  // Listen for step changes via custom event (dispatched by api.updateProject)
-  useEffect(() => {
-    function handleProjectUpdate(e: Event) {
-      if (!(e instanceof CustomEvent)) return;
-      if (e.detail?.projectId === project.id) {
-        revalidator.revalidate();
-      }
-    }
-    window.addEventListener("project-updated", handleProjectUpdate);
-    return () => window.removeEventListener("project-updated", handleProjectUpdate);
-  }, [project.id, revalidator]);
 
   return (
     <div className="flex h-screen flex-col">
