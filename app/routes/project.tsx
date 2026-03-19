@@ -5,7 +5,7 @@ import { ArrowLeft, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getProject } from "@/lib/api";
 import type { ProjectWithRelations } from "@/lib/api";
-import { components, createTools, getSystemPrompt } from "@/lib/tambo";
+import { buildTamboConfig } from "@/lib/tambo";
 import { MessageThreadPanel } from "@/components/tambo/message-thread-panel";
 import { StepSidebar } from "@/components/project/step-sidebar";
 import type { Route } from "./+types/project";
@@ -42,12 +42,12 @@ function ProjectWorkspaceInner({ project }: { project: ProjectWithRelations }) {
   const revalidateRef = useRef(revalidate);
   revalidateRef.current = revalidate;
 
-  // Create project-scoped tools; revalidate the route after a step advance.
-  // revalidateRef keeps the closure up-to-date without recreating tools.
-  const tools = useMemo(() => createTools(project.id, () => revalidateRef.current()), [project.id]);
-
-  // Get system prompt for current step
-  const systemPrompt = useMemo(() => getSystemPrompt(project.currentStep), [project.currentStep]);
+  // Build Tambo config scoped to the current project and step.
+  // revalidateRef keeps the closure up-to-date without recreating the config.
+  const { systemPrompt, tools, components } = useMemo(
+    () => buildTamboConfig(project.id, project.currentStep, () => revalidateRef.current()),
+    [project.id, project.currentStep]
+  );
 
   return (
     <div className="flex h-screen flex-col">
