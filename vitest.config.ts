@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     environment: "node",
-    include: ["database/**/*.test.ts"],
+    include: ["database/**/*.test.ts", "server/**/*.test.ts"],
     server: {
       deps: {
         inline: ["drizzle-zod"],
