@@ -3,7 +3,6 @@ import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import express from "express";
 import postgres from "postgres";
-import { z } from "zod/v4";
 import "react-router";
 
 import { DatabaseContext } from "~/database/context";
@@ -17,6 +16,7 @@ import {
   StyleInsert,
 } from "~/database/entities";
 import * as schema from "~/database/schema";
+import { registerReplaceResource } from "./resource-route";
 
 declare module "react-router" {
   interface AppLoadContext {
@@ -103,85 +103,35 @@ app.delete("/api/projects/:id", async (req, res) => {
 
 // ── Architectural Characteristics ──────────────────────
 
-app.put("/api/projects/:id/characteristics", async (req, res) => {
-  try {
-    const parsed = z.object({ characteristics: z.array(CharacteristicInsert) }).safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
-
-    const db = DatabaseContext.getStore()!;
-    const projectId = req.params.id;
-    const valid = parsed.data.characteristics.filter((c) => c.name);
-
-    await db.transaction(async (tx) => {
-      await tx
-        .delete(schema.architecturalCharacteristics)
-        .where(eq(schema.architecturalCharacteristics.projectId, projectId));
-      if (valid.length > 0) {
-        await tx
-          .insert(schema.architecturalCharacteristics)
-          .values(valid.map((r) => ({ ...r, projectId })));
-      }
-    });
-
-    res.json({ ok: true });
-  } catch (err) {
-    console.error("Failed to save characteristics:", err);
-    res.status(500).json({ error: "Failed to save characteristics" });
-  }
+registerReplaceResource(app, {
+  path: "characteristics",
+  bodyKey: "characteristics",
+  itemSchema: CharacteristicInsert,
+  table: schema.architecturalCharacteristics,
+  projectIdColumn: schema.architecturalCharacteristics.projectId,
+  filter: (c) => !!c.name,
 });
 
 // ── Logical Components ─────────────────────────────────
 
-app.put("/api/projects/:id/components", async (req, res) => {
-  try {
-    const parsed = z.object({ components: z.array(ComponentInsert) }).safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
-
-    const db = DatabaseContext.getStore()!;
-    const projectId = req.params.id;
-    const valid = parsed.data.components.filter((c) => c.name);
-
-    await db.transaction(async (tx) => {
-      await tx
-        .delete(schema.logicalComponents)
-        .where(eq(schema.logicalComponents.projectId, projectId));
-      if (valid.length > 0) {
-        await tx.insert(schema.logicalComponents).values(valid.map((r) => ({ ...r, projectId })));
-      }
-    });
-
-    res.json({ ok: true });
-  } catch (err) {
-    console.error("Failed to save components:", err);
-    res.status(500).json({ error: "Failed to save components" });
-  }
+registerReplaceResource(app, {
+  path: "components",
+  bodyKey: "components",
+  itemSchema: ComponentInsert,
+  table: schema.logicalComponents,
+  projectIdColumn: schema.logicalComponents.projectId,
+  filter: (c) => !!c.name,
 });
 
 // ── Architectural Styles ───────────────────────────────
 
-app.put("/api/projects/:id/styles", async (req, res) => {
-  try {
-    const parsed = z.object({ styles: z.array(StyleInsert) }).safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
-
-    const db = DatabaseContext.getStore()!;
-    const projectId = req.params.id;
-    const valid = parsed.data.styles.filter((s) => s.styleName);
-
-    await db.transaction(async (tx) => {
-      await tx
-        .delete(schema.architecturalStyles)
-        .where(eq(schema.architecturalStyles.projectId, projectId));
-      if (valid.length > 0) {
-        await tx.insert(schema.architecturalStyles).values(valid.map((r) => ({ ...r, projectId })));
-      }
-    });
-
-    res.json({ ok: true });
-  } catch (err) {
-    console.error("Failed to save styles:", err);
-    res.status(500).json({ error: "Failed to save styles" });
-  }
+registerReplaceResource(app, {
+  path: "styles",
+  bodyKey: "styles",
+  itemSchema: StyleInsert,
+  table: schema.architecturalStyles,
+  projectIdColumn: schema.architecturalStyles.projectId,
+  filter: (s) => !!s.styleName,
 });
 
 // ── Architecture Decisions ─────────────────────────────
@@ -239,31 +189,13 @@ app.put("/api/projects/:id/decisions/:decisionId", async (req, res) => {
 
 // ── Architecture Diagrams ──────────────────────────────
 
-app.put("/api/projects/:id/diagrams", async (req, res) => {
-  try {
-    const parsed = z.object({ diagrams: z.array(DiagramInsert) }).safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
-
-    const db = DatabaseContext.getStore()!;
-    const projectId = req.params.id;
-    const valid = parsed.data.diagrams.filter((d) => d.title && d.mermaidCode);
-
-    await db.transaction(async (tx) => {
-      await tx
-        .delete(schema.architectureDiagrams)
-        .where(eq(schema.architectureDiagrams.projectId, projectId));
-      if (valid.length > 0) {
-        await tx
-          .insert(schema.architectureDiagrams)
-          .values(valid.map((r) => ({ ...r, projectId })));
-      }
-    });
-
-    res.json({ ok: true });
-  } catch (err) {
-    console.error("Failed to save diagrams:", err);
-    res.status(500).json({ error: "Failed to save diagrams" });
-  }
+registerReplaceResource(app, {
+  path: "diagrams",
+  bodyKey: "diagrams",
+  itemSchema: DiagramInsert,
+  table: schema.architectureDiagrams,
+  projectIdColumn: schema.architectureDiagrams.projectId,
+  filter: (d) => !!d.title && !!d.mermaidCode,
 });
 
 // ── Export (full project data) ─────────────────────────
