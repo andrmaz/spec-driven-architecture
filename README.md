@@ -1,8 +1,6 @@
 # Spec-Driven Architecture
 
-[![Test](https://github.com/andrmaz/spec-driven-architecture/actions/workflows/ci.yml/badge.svg?event=push)](https://github.com/andrmaz/spec-driven-architecture/actions/workflows/ci.yml)
-[![Build](https://github.com/andrmaz/spec-driven-architecture/actions/workflows/ci.yml/badge.svg?event=push)](https://github.com/andrmaz/spec-driven-architecture/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/andrmaz/spec-driven-architecture/actions/workflows/ci.yml/badge.svg?event=push)](https://github.com/andrmaz/spec-driven-architecture/actions/workflows/ci.yml)
+[![CI](https://github.com/andrmaz/spec-driven-architecture/actions/workflows/ci.yml/badge.svg)](https://github.com/andrmaz/spec-driven-architecture/actions/workflows/ci.yml)
 
 An AI-guided assistant that walks you through a structured, five-step process for defining and documenting your software architecture — from quality attributes to exportable diagrams.
 
