@@ -4,6 +4,14 @@
 
 An AI-guided assistant that walks you through a structured, five-step process for defining and documenting your software architecture — from quality attributes to exportable diagrams.
 
+<img width="15%" height="1056" alt="spec-driven-architecture-characteristics " src="https://github.com/user-attachments/assets/585db1d0-1e64-46f5-a462-c44617985537" />
+<img width="15%" height="1054" alt="spec-driven-architecture-styles" src="https://github.com/user-attachments/assets/588142e2-ebaf-4c8b-ba43-30680e673850" />
+<img width="15%" height="1053" alt="spec-driven-architecture-components" src="https://github.com/user-attachments/assets/2c4315a4-d5cf-43b0-8131-27d470d0891d" />
+<img width="15%" height="1056" alt="spec-driven-architecture-adrs" src="https://github.com/user-attachments/assets/3cf842d9-22ac-4aaf-9138-d31079d67b18" />
+<img width="15%" height="1055" alt="spec-driven-architecture-diagrams" src="https://github.com/user-attachments/assets/442d3399-dba9-4c15-8995-ab07abfc9a19" />
+<img width="15%" height="1055" alt="spec-driven-architecture-export" src="https://github.com/user-attachments/assets/8257b33d-c137-4b5e-959e-27df39a13125" />
+
+
 ## Why
 
 Architecture decisions are too often undocumented, scattered across Slack threads, or locked in one engineer's head. This tool brings structure to the process by combining an interactive AI chat with rich, purpose-built UI components — so you produce real, exportable architecture documentation as a natural by-product of the conversation.
