@@ -42,7 +42,7 @@
     "class-variance-authority": "^0.7.1",
     "compression": "^1.8.0",
     "dompurify": "^3.3.2",
-    "drizzle-orm": "~0.36.3",
+    "drizzle-orm": "~0.45.2",
     "drizzle-zod": "^0.5.1",
     "express": "^5.1.0",
     "file-saver": "^2.0.5",
