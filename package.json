@@ -52,7 +52,7 @@
     "json-stringify-pretty-compact": "^4.0.0",
     "jszip": "^3.10.1",
     "lucide-react": "^0.574.0",
-    "mermaid": "^11.12.3",
+    "mermaid": "^11.15.0",
     "morgan": "^1.10.0",
     "postgres": "^3.4.5",
     "radix-ui": "^1.4.3",
